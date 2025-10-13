@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BLAST Search - Sugarcane Genome Hub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>BLAST Search</h1>
+    <form id="blastForm" action="/blast/search" method="post">
+        <label for="sequence">Enter Sequence (FASTA format):</label>
+        <textarea id="sequence" name="sequence" rows="10" cols="50" placeholder=">sequence_name\nATCG..."></textarea>
+        <label for="evalue">E-value threshold:</label>
+        <input type="number" id="evalue" name="evalue" value="10" min="0" step="0.1">
+        <label for="max_hits">Max hits:</label>
+        <input type="number" id="max_hits" name="max_hits" value="10" min="1">
+        <button type="submit">Search</button>
+    </form>
+    <div id="blastResult">
+        <h3>Results:</h3>
+        <table id="resultTable">
+            <thead>
+                <tr>
+                    <th>Query</th>
+                    <th>Subject</th>
+                    <th>% Identity</th>
+                    <th>Alignment Length</th>
+                    <th>Mismatch</th>
+                    <th>Gap Opens</th>
+                    <th>Query Start</th>
+                    <th>Query End</th>
+                    <th>Subject Start</th>
+                    <th>Subject End</th>
+                    <th>E-value</th>
+                    <th>Bit Score</th>
+                </tr>
+            </thead>
+            <tbody id="resultBody"></tbody>
+        </table>
+    </div>
+    <script>
+        document.getElementById('blastForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const form = event.target;
+            const resultBody = document.getElementById('resultBody');
+            resultBody.innerHTML = '<tr><td colspan="12">Loading...</td></tr>';
+
+            const response = await fetch('/blast/search', {
+                method: 'POST',
+                body: new FormData(form)
+            });
+            const data = await response.json();
+
+            resultBody.innerHTML = '';
+            if (data.error) {
+                resultBody.innerHTML = `<tr><td colspan="12">Error: ${data.error}</td></tr>`;
+            } else if (data.result && data.result.length > 0 && data.result[0] !== "No hits found") {
+                data.result.forEach(row => {
+                    const cols = row.split('\t');
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${cols[0]}</td>
+                        <td>${cols[1]}</td>
+                        <td>${cols[2]}</td>
+                        <td>${cols[3]}</td>
+                        <td>${cols[4]}</td>
+                        <td>${cols[5]}</td>
+                        <td>${cols[6]}</td>
+                        <td>${cols[7]}</td>
+                        <td>${cols[8]}</td>
+                        <td>${cols[9]}</td>
+                        <td>${cols[10]}</td>
+                        <td>${cols[11]}</td>
+                    `;
+                    resultBody.appendChild(tr);
+                });
+            } else {
+                resultBody.innerHTML = '<tr><td colspan="12">No hits found</td></tr>';
+            }
+        });
+    </script>
+</body>
+</html>

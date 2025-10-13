@@ -12,11 +12,20 @@
         <p>Initially, sugarcane chromosome nomenclature was based on sorghum. We established a new nomenclature to optimize intra-Saccharum correspondence.</p>
     </section>
     <section>
+        <h2>Gene Search</h2>
+        <form id="geneSearchForm" onsubmit="searchGene(event)">
+            <label for="contig_id">Enter Contig ID (e.g., JAKOGQ010001029.1):</label>
+            <input type="text" id="contig_id" name="contig_id" required>
+            <button type="submit">Search</button>
+        </form>
+        <div id="result"></div>
+    </section>
+    <section>
         <h2>Tools</h2>
         <ul>
-            <li><a href="#">Gene Search</a></li>
-            <li><a href="#">JBrowse</a></li>
-            <li><a href="#">BLAST Search</a></li>
+            <li><a href="#" onclick="document.getElementById('geneSearchForm').scrollIntoView(); return false;">Gene Search</a></li>
+            <li><a href="{{ url_for('jbrowse') }}">JBrowse</a></li>
+            <li><a href="{{ url_for('blast') }}">BLAST Search</a></li>
         </ul>
     </section>
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>

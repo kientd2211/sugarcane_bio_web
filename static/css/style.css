@@ -17,3 +17,12 @@ a {
     text-decoration: none;
     color: #007bff;
 }
+form {
+    margin-bottom: 20px;
+}
+#result {
+    margin-top: 20px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    background-color: #fff;
+}

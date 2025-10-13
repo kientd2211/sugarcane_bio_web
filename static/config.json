@@ -1,0 +1,36 @@
+{
+  "assemblies": [
+    {
+      "name": "Saccharum spontaneum",
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "ref_seq",
+        "adapter": {
+          "type": "IndexedFastaAdapter",
+          "fastaLocation": {
+            "uri": "/static/data/genomic.fasta"
+          },
+          "faiLocation": {
+            "uri": "/static/data/genomic.fasta.fai"
+          }
+        }
+      }
+    }
+  ],
+  "tracks": [
+    {
+      "type": "ReferenceSequenceTrack", 
+      "trackId": "ref_seq", 
+      "assemblyNames": ["Saccharum spontaneum"] 
+    }
+  ],
+  "defaultSession": {
+    "name": "Default Session",
+    "view": {
+      "id": "linearGenomeView",
+      "type": "LinearGenomeView",
+      "assemblyNames": ["Saccharum spontaneum"],
+      "location": "CM039579.1:1..1000"
+    }
+  }
+}
