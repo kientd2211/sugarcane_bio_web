@@ -2,9 +2,66 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BLAST Search - Sugarcane Genome Hub</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+        header {
+            background-color: #006400;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        section {
+            background-color: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #006400;
+            font-size: 20px;
+            margin-top: 0;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        label {
+            font-weight: bold;
+        }
+        textarea, input[type="number"], button {
+            padding: 8px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #006400;
+            color: white;
+            border: none;
+            cursor: pointer;
+            width: fit-content;
+        }
+        button:hover {
+            background-color: #004d00;
+        }
         table {
             border-collapse: collapse;
             width: 100%;
@@ -18,40 +75,50 @@
         th {
             background-color: #f2f2f2;
         }
+        #resultTable tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
     </style>
 </head>
 <body>
-    <h1>BLAST Search</h1>
-    <form id="blastForm" action="/blast/search" method="post">
-        <label for="sequence">Enter Sequence (FASTA format):</label>
-        <textarea id="sequence" name="sequence" rows="10" cols="50" placeholder=">sequence_name\nATCG..."></textarea>
-        <label for="evalue">E-value threshold:</label>
-        <input type="number" id="evalue" name="evalue" value="10" min="0" step="0.1">
-        <label for="max_hits">Max hits:</label>
-        <input type="number" id="max_hits" name="max_hits" value="10" min="1">
-        <button type="submit">Search</button>
-    </form>
-    <div id="blastResult">
-        <h3>Results:</h3>
-        <table id="resultTable">
-            <thead>
-                <tr>
-                    <th>Query</th>
-                    <th>Subject</th>
-                    <th>% Identity</th>
-                    <th>Alignment Length</th>
-                    <th>Mismatch</th>
-                    <th>Gap Opens</th>
-                    <th>Query Start</th>
-                    <th>Query End</th>
-                    <th>Subject Start</th>
-                    <th>Subject End</th>
-                    <th>E-value</th>
-                    <th>Bit Score</th>
-                </tr>
-            </thead>
-            <tbody id="resultBody"></tbody>
-        </table>
+    <header>
+        <h1>BLAST Search - Sugarcane Genome Hub</h1>
+    </header>
+    <div class="container">
+        <section>
+            <h2>BLAST Search</h2>
+            <form id="blastForm" action="/blast/search" method="post">
+                <label for="sequence">Enter Sequence (FASTA format):</label>
+                <textarea id="sequence" name="sequence" rows="6" cols="50" placeholder=">sequence_name\nATCG..."></textarea>
+                <label for="evalue">E-value threshold:</label>
+                <input type="number" id="evalue" name="evalue" value="10" min="0" step="0.1">
+                <label for="max_hits">Max hits:</label>
+                <input type="number" id="max_hits" name="max_hits" value="10" min="1">
+                <button type="submit">Search</button>
+            </form>
+            <div id="blastResult">
+                <h3>Results:</h3>
+                <table id="resultTable">
+                    <thead>
+                        <tr>
+                            <th>Query</th>
+                            <th>Subject</th>
+                            <th>% Identity</th>
+                            <th>Alignment Length</th>
+                            <th>Mismatch</th>
+                            <th>Gap Opens</th>
+                            <th>Query Start</th>
+                            <th>Query End</th>
+                            <th>Subject Start</th>
+                            <th>Subject End</th>
+                            <th>E-value</th>
+                            <th>Bit Score</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultBody"></tbody>
+                </table>
+            </div>
+        </section>
     </div>
     <script>
         document.getElementById('blastForm').addEventListener('submit', async (event) => {
