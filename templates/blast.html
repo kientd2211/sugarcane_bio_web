@@ -2,83 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BLAST Search - Sugarcane Genome Hub</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f9f9f9;
-            color: #333;
-        }
-        header {
-            background-color: #006400;
-            color: white;
-            padding: 10px 20px;
-            text-align: center;
-        }
-        header h1 {
-            margin: 0;
-            font-size: 24px;
-        }
-        .container {
-            max-width: 900px;
-            margin: 20px auto;
-            padding: 0 20px;
-        }
-        section {
-            background-color: white;
-            padding: 15px;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        h2 {
-            color: #006400;
-            font-size: 20px;
-            margin-top: 0;
-        }
-        form {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        label {
-            font-weight: bold;
-        }
-        textarea, input[type="number"], button {
-            padding: 8px;
-            font-size: 14px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-        button {
-            background-color: #006400;
-            color: white;
-            border: none;
-            cursor: pointer;
-            width: fit-content;
-        }
-        button:hover {
-            background-color: #004d00;
-        }
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            margin-top: 10px;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-        #resultTable tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-    </style>
+    <style>/* Dùng CSS cũ của bạn */</style>
 </head>
 <body>
     <header>
@@ -87,58 +12,81 @@
     <div class="container">
         <section>
             <h2>BLAST Search</h2>
-            <form id="blastForm" action="/blast/search" method="post">
-                <label for="sequence">Enter Sequence (FASTA format):</label>
-                <textarea id="sequence" name="sequence" rows="6" cols="50" placeholder=">sequence_name\nATCG..."></textarea>
+            <form id="blastForm">
+                <label for="species_select_blast">Target Species:</label>
+                <select id="species_select_blast" name="species" required>
+                    {% for species in species_list %}
+                    <option value="{{ species }}">{{ species }}</option>
+                    {% endfor %}
+                </select>
+                
+                <label for="sequence">Enter Query Sequence (FASTA format):</label>
+                <textarea id="sequence" name="sequence" rows="6" cols="50" placeholder=">my_sequence\nATCG..."></textarea>
+
                 <label for="evalue">E-value threshold:</label>
                 <input type="number" id="evalue" name="evalue" value="10" min="0" step="0.1">
                 <label for="max_hits">Max hits:</label>
                 <input type="number" id="max_hits" name="max_hits" value="10" min="1">
                 <button type="submit">Search</button>
             </form>
+            
             <div id="blastResult">
-                <h3>Results:</h3>
-                <table id="resultTable">
+                <h3>BLAST Hits (Format: Tabular)</h3>
+                <table border="1">
                     <thead>
                         <tr>
-                            <th>Query</th>
-                            <th>Subject</th>
+                            <th>Query ID</th>
+                            <th>Subject ID</th>
                             <th>% Identity</th>
                             <th>Alignment Length</th>
-                            <th>Mismatch</th>
+                            <th>Mismatches</th>
                             <th>Gap Opens</th>
-                            <th>Query Start</th>
-                            <th>Query End</th>
-                            <th>Subject Start</th>
-                            <th>Subject End</th>
+                            <th>Q. Start</th>
+                            <th>Q. End</th>
+                            <th>S. Start</th>
+                            <th>S. End</th>
                             <th>E-value</th>
                             <th>Bit Score</th>
                         </tr>
                     </thead>
-                    <tbody id="resultBody"></tbody>
+                    <tbody id="resultBody"> 
+                        <tr><td colspan="12">Enter sequence and click Search to see results.</td></tr>
+                    </tbody>
                 </table>
             </div>
         </section>
     </div>
+    
     <script>
+        // Cập nhật script BLAST để gửi cả trường species
         document.getElementById('blastForm').addEventListener('submit', async (event) => {
             event.preventDefault();
             const form = event.target;
             const resultBody = document.getElementById('resultBody');
             resultBody.innerHTML = '<tr><td colspan="12">Loading...</td></tr>';
+            
+            const formData = new FormData(form);
 
-            const response = await fetch('/blast/search', {
+            console.log('resultBody:', resultBody);
+            
+            // Thay đổi URL API
+            const response = await fetch('/api/blast/search', {
                 method: 'POST',
-                body: new FormData(form)
+                body: formData
             });
             const data = await response.json();
 
+            // ... (Phần xử lý kết quả và lỗi giữ nguyên hoặc làm đẹp thêm) ...
+            
             resultBody.innerHTML = '';
             if (data.error) {
                 resultBody.innerHTML = `<tr><td colspan="12">Error: ${data.error}</td></tr>`;
             } else if (data.result && data.result.length > 0 && data.result[0] !== "No hits found") {
                 data.result.forEach(row => {
                     const cols = row.split('\t');
+                    const e_value = parseFloat(cols[10]).toExponential(2); 
+                    const bit_score = parseFloat(cols[11]).toFixed(1); 
+                    
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td>${cols[0]}</td>
@@ -151,8 +99,8 @@
                         <td>${cols[7]}</td>
                         <td>${cols[8]}</td>
                         <td>${cols[9]}</td>
-                        <td>${cols[10]}</td>
-                        <td>${cols[11]}</td>
+                        <td>${e_value}</td>
+                        <td>${bit_score}</td>
                     `;
                     resultBody.appendChild(tr);
                 });

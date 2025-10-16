@@ -2,88 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sugarcane Genome Hub</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f9f9f9;
-            color: #333;
-        }
-        header {
-            background-color: #006400;
-            color: white;
-            padding: 10px 20px;
-            text-align: center;
-        }
-        header h1 {
-            margin: 0;
-            font-size: 24px;
-        }
-        .container {
-            max-width: 900px;
-            margin: 20px auto;
-            padding: 0 20px;
-        }
-        section {
-            margin-bottom: 20px;
-            background-color: white;
-            padding: 15px;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        h2 {
-            color: #006400;
-            font-size: 20px;
-            margin-top: 0;
-        }
-        form {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        label {
-            font-weight: bold;
-        }
-        input[type="text"], button {
-            padding: 8px;
-            font-size: 14px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-        button {
-            background-color: #006400;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #004d00;
-        }
-        ul {
-            list-style-type: none;
-            padding: 0;
-        }
-        ul li {
-            margin: 10px 0;
-        }
-        ul li a {
-            color: #006400;
-            text-decoration: none;
-            font-size: 16px;
-        }
-        ul li a:hover {
-            text-decoration: underline;
-        }
-        #result {
-            margin-top: 10px;
-            padding: 10px;
-            border: 1px solid #ddd;
-            display: none;
-        }
-    </style>
+    <title>Sugarcane Genome Hub - Gene Search</title>
+    <style>/* Dùng CSS cũ của bạn */</style>
 </head>
 <body>
     <header>
@@ -91,45 +11,68 @@
     </header>
     <div class="container">
         <section>
-            <h2>Chromosome Nomenclature</h2>
-            <p>Initially based on sorghum, we established a new nomenclature to optimize intra-Saccharum correspondence. (Reference: D’Hont et al., 2023, ISSCT Vol. 31)</p>
-        </section>
-        <section>
             <h2>Gene Search</h2>
-            <form id="geneSearchForm" action="/gene" method="get">
-                <label for="contig_id">Enter Contig ID (e.g., JAKOGQ010001029.1):</label>
+            <form id="geneSearchForm">
+                <label for="species_select">Select Species:</label>
+                <select id="species_select" name="species" required>
+                    {% for species in species_list %}
+                    <option value="{{ species }}">{{ species }}</option>
+                    {% endfor %}
+                </select>
+                <label for="contig_id">Enter Contig/Gene ID (e.g., JAKOGQ010001029.1):</label>
                 <input type="text" id="contig_id" name="contig_id" required>
                 <button type="submit">Search</button>
             </form>
             <div id="result"></div>
         </section>
+
         <section>
             <h2>Tools</h2>
             <ul>
-                <li><a href="#geneSearch" onclick="document.getElementById('geneSearchForm').scrollIntoView(); return false;">Gene Search</a></li>
-                <li><a href="{{ url_for('jbrowse') }}">JBrowse</a></li>
+                <li><a href="{{ url_for('home') }}">Gene Search</a></li>
                 <li><a href="{{ url_for('blast') }}">BLAST Search</a></li>
-            </ul>
+                </ul>
         </section>
     </div>
+
     <script>
         document.getElementById('geneSearchForm').addEventListener('submit', async (event) => {
             event.preventDefault();
+            const species = document.getElementById('species_select').value;
             const contigId = document.getElementById('contig_id').value;
             const resultDiv = document.getElementById('result');
             resultDiv.innerHTML = 'Loading...';
             resultDiv.style.display = 'block';
 
-            const response = await fetch(`/gene/${contigId}`);
+            const response = await fetch(`/api/gene_search?species=${species}&contig_id=${contigId}`);
             const data = await response.json();
+            
             if (data.error) {
                 resultDiv.innerHTML = `<p style="color: red;">Error: ${data.error}</p>`;
             } else {
+                // Định dạng hiển thị features chi tiết hơn
+                let featuresHtml = '<ul>';
+                if (data.features && data.features.length > 0) {
+                    featuresHtml += data.features.map(f => {
+                        const product = f.qualifiers.product ? f.qualifiers.product.join('; ') : 'N/A';
+                        const note = f.qualifiers.note ? f.qualifiers.note.join('; ') : '';
+                        return `<li>
+                            <strong>${f.type}</strong> at ${f.location}
+                            <br>Product: ${product}
+                            <br>Note: ${note}
+                        </li>`;
+                    }).join('');
+                } else {
+                    featuresHtml += '<li>No annotated features (gene, CDS, etc.) found</li>';
+                }
+                featuresHtml += '</ul>';
+
                 resultDiv.innerHTML = `
-                    <p><strong>Contig ID:</strong> ${data.contig_id}</p>
+                    <h3>Results for Contig: ${data.contig_id} (${data.species})</h3>
                     <p><strong>Description:</strong> ${data.description}</p>
                     <p><strong>Length:</strong> ${data.sequence_length} bp</p>
-                    <p><strong>Features:</strong> ${data.features.join(', ')}</p>
+                    <h4>Features:</h4>
+                    ${featuresHtml}
                 `;
             }
         });
