@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trực quan hóa Gen JBrowse</title>
+    <!-- Tải Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+    <header class="bg-teal-600 text-white p-4 shadow-lg sticky top-0 z-10">
+        <h1 class="text-2xl font-bold">Trực quan hóa Gen Mía (JBrowse)</h1>
+    </header>
+    
+    <main id="app-main" class="p-6 max-w-7xl mx-auto">
+        <!-- Nội dung sẽ được chèn bởi JavaScript -->
+    </main>
+
+    <script>
+        // Cấu hình JBrowse 2 Client
+        const JBROWSE_BASE_URL = "https://jbrowse.org/code/jb2/main/";
+        const JBROWSE_GENOME = "Sugarcane_v1"; 
+
+        // ----------------------------------------------------
+        // BỔ SUNG: Thêm URL cấu hình tĩnh (Nếu bạn có một tệp cấu hình JSON thực tế
+        // cho bộ gen mía, hãy thay thế URL demo này bằng URL của bạn.)
+        // URL này chỉ là ví dụ để mô phỏng URL cấu hình:
+        const JBROWSE_CONFIG_URL = "https://jbrowse.org/genomes/GRCh38/1000genomes/config_1000genomes.json";
+        // ----------------------------------------------------
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const chrom = params.get('chrom');
+            const start = params.get('start');
+            const end = params.get('end');
+            const name = params.get('name') || 'Gen Đã Chọn';
+            
+            const appMain = document.getElementById('app-main');
+
+            if (chrom && start && end) {
+                // Tạo liên kết JBrowse với vị trí gen VÀ cấu hình tĩnh
+                const location = `${chrom}:${start}..${end}`;
+                
+                // Thay đổi: Thêm tham số 'config' vào URL nhúng
+                const jbrowseLink = `${JBROWSE_BASE_URL}?config=${JBROWSE_CONFIG_URL}&loc=${location}&assembly=${JBROWSE_GENOME}`;
+
+                appMain.innerHTML = `
+                    <a href="gene_view.html" class="mb-6 text-teal-600 hover:text-teal-800 transition-colors flex items-center font-medium">
+                        <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                        Quay lại chi tiết gen
+                    </a>
+
+                    <h2 class="text-4xl font-extrabold text-lime-700 mb-4">
+                        Xem Gen: ${name}
+                    </h2>
+                    
+                    <div class="bg-gray-100 border border-gray-300 p-3 rounded-lg mb-4 text-sm">
+                        <p class="font-bold text-gray-700">Vị trí:</p>
+                        <p class="font-mono text-xs break-all">${chrom}:${parseInt(start).toLocaleString()} - ${parseInt(end).toLocaleString()} (Bộ gen: ${JBROWSE_GENOME})</p>
+                        <p class="mt-1 font-bold text-gray-700">Cấu hình:</p>
+                        <p class="font-mono text-xs break-all">${JBROWSE_CONFIG_URL}</p>
+                    </div>
+
+                    <!-- Khối nhúng JBrowse bằng iFrame -->
+                    <div class="relative w-full overflow-hidden rounded-xl shadow-2xl" style="height: 80vh; min-height: 600px;">
+                        <iframe 
+                            src="${jbrowseLink}" 
+                            width="100%" 
+                            height="100%" 
+                            frameborder="0" 
+                            allowfullscreen
+                            title="JBrowse Genome Browser for ${name}"
+                            class="border-4 border-lime-600 rounded-xl"
+                        ></iframe>
+                    </div>
+                `;
+            } else {
+                appMain.innerHTML = `
+                    <div class="mt-10 p-5 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+                        Không tìm thấy tọa độ gen để trực quan hóa.
+                    </div>
+                    <a href="gene_view.html" class="mt-4 inline-flex items-center text-teal-600 hover:text-teal-800">
+                        <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                        Quay lại trang chi tiết gen
+                    </a>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>

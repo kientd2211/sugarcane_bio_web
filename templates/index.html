@@ -1,79 +1,199 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Sugarcane Genome Hub - Gene Search</title>
-    <style>/* Dùng CSS cũ của bạn */</style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bio-Informatics Tools</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8f9fa; }
+        .hero-section { background-color: #004d40; color: white; border-radius: 16px; }
+        .card { background-color: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); transition: transform 0.2s; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15); }
+        .result-box { border: 1px solid #e0e0e0; padding: 1rem; border-radius: 8px; }
+    </style>
 </head>
-<body>
-    <header>
-        <h1>Sugarcane Genome Hub</h1>
-    </header>
-    <div class="container">
-        <section>
-            <h2>Gene Search</h2>
-            <form id="geneSearchForm">
-                <label for="species_select">Select Species:</label>
-                <select id="species_select" name="species" required>
-                    {% for species in species_list %}
-                    <option value="{{ species }}">{{ species }}</option>
-                    {% endfor %}
-                </select>
-                <label for="contig_id">Enter Contig/Gene ID (e.g., JAKOGQ010001029.1):</label>
-                <input type="text" id="contig_id" name="contig_id" required>
-                <button type="submit">Search</button>
-            </form>
-            <div id="result"></div>
-        </section>
+<body class="p-4 md:p-10">
+    <div class="max-w-7xl mx-auto space-y-10">
 
-        <section>
-            <h2>Tools</h2>
-            <ul>
-                <li><a href="{{ url_for('home') }}">Gene Search</a></li>
-                <li><a href="{{ url_for('blast') }}">BLAST Search</a></li>
-                </ul>
-        </section>
+        <!-- Header and Hero Section -->
+        <div class="hero-section p-8 md:p-12 text-center">
+            <h1 class="text-5xl md:text-6xl font-extrabold mb-3">Bio-Tools Gateway</h1>
+            <p class="text-xl font-light text-gray-200">Nền tảng tra cứu, chú giải gen và phân tích sinh học phân tử chuyên sâu.</p>
+        </div>
+
+        <!-- Main Content Grid (Search and Tools) -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- 1. Gene Search Tool (Left Column) -->
+            <div class="lg:col-span-2 space-y-8">
+                <div class="card p-6">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6 border-b pb-3">Tra cứu và Chú giải Gen</h2>
+                    
+                    <form id="gene-search-form" class="space-y-4">
+                        <!-- Species Selector -->
+                        <div>
+                            <label for="species" class="block text-sm font-medium text-gray-700 mb-1">Chọn Loài</label>
+                            <select id="species" name="species" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500">
+                                {% if species_list %}
+                                    {% for species in species_list %}
+                                        <option value="{{ species }}">{{ species }}</option>
+                                    {% endfor %}
+                                {% else %}
+                                    <option value="" disabled>Không có dữ liệu loài</option>
+                                {% endif %}
+                            </select>
+                        </div>
+                        
+                        <!-- Contig/Gene ID Input -->
+                        <div>
+                            <label for="contig_id" class="block text-sm font-medium text-gray-700 mb-1">Nhập Contig ID, Locus Tag, hoặc Mô tả Gen</label>
+                            <input type="text" id="contig_id" name="contig_id" required placeholder="Ví dụ: JAKOGQ010001029.1 hoặc SuSy-1" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500">
+                        </div>
+                        
+                        <!-- Submit Button -->
+                        <button type="submit" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-150 shadow-md">
+                            <span id="search-text">Tìm kiếm</span>
+                            <svg id="loading-spinner" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white hidden inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </button>
+                        
+                        <div id="search-status" class="mt-4 p-3 rounded-lg text-center hidden"></div>
+                    </form>
+
+                    <!-- Search Results -->
+                    <div id="search-results" class="hidden mt-6 pt-4 border-t border-gray-200">
+                        <h3 class="text-xl font-semibold mb-3 text-gray-700">Kết quả Tìm kiếm</h3>
+                        <div class="result-box bg-white space-y-3">
+                            <p class="text-lg font-bold text-gray-900" id="result-description"></p>
+                            <p class="text-sm text-gray-600">Contig ID: <span id="result-contig" class="font-mono font-semibold text-gray-800"></span></p>
+                            <p class="text-sm text-gray-600">Độ dài Trình tự: <span id="result-length" class="font-semibold text-gray-800"></span> bp</p>
+                            <p class="text-sm text-gray-600">Số lượng Đặc trưng: <span id="result-features-count" class="font-semibold text-gray-800"></span></p>
+                            <a id="gene-view-link" href="#" class="inline-block mt-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded-md transition duration-150 shadow-md">
+                                Xem Chi tiết (Gene View)
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Tool Cards (Right Column) -->
+            <div class="lg:col-span-1 space-y-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Các Công cụ Phân tích</h2>
+
+                <!-- BLAST Card -->
+                <a href="/blast" class="card block p-6 bg-blue-50 border-l-4 border-blue-600">
+                    <div class="flex items-center space-x-3">
+                        <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-800">BLASTN Alignment</h3>
+                            <p class="text-sm text-gray-600">Tìm kiếm trình tự tương đồng trong bộ gen mục tiêu.</p>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Primer Design Card -->
+                <a href="/primer" class="card block p-6 bg-purple-50 border-l-4 border-purple-600">
+                    <div class="flex items-center space-x-3">
+                        <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354l.01.01m-.01-.01v2.71m0 5.084V16m0 5.006v.01m-2.93-1.666l-2.07 2.07m2.07-2.07h-2.71m0 5.084h2.71m0 5.006l-2.07-2.07m-2.93-1.666l-2.07 2.07m2.07-2.07V16m0 5.006v.01m-2.93-1.666l-2.07 2.07m2.07-2.07h-2.71m0 5.084h2.71m0 5.006l-2.07-2.07"></path></svg>
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-800">Thiết kế Primer PCR</h3>
+                            <p class="text-sm text-gray-600">Tính toán Tm, %GC và tự động thiết kế cặp primer.</p>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- About/Documentation Card (Placeholder) -->
+                <div class="card p-6 bg-gray-50 border-l-4 border-gray-400">
+                    <div class="flex items-center space-x-3">
+                        <svg class="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-800">Về Dữ liệu</h3>
+                            <p class="text-sm text-gray-600">Thông tin chi tiết về nguồn dữ liệu và phương pháp chú giải.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
-        document.getElementById('geneSearchForm').addEventListener('submit', async (event) => {
-            event.preventDefault();
-            const species = document.getElementById('species_select').value;
-            const contigId = document.getElementById('contig_id').value;
-            const resultDiv = document.getElementById('result');
-            resultDiv.innerHTML = 'Loading...';
-            resultDiv.style.display = 'block';
+        document.getElementById('gene-search-form').addEventListener('submit', async function (e) {
+            e.preventDefault();
 
-            const response = await fetch(`/api/gene_search?species=${species}&contig_id=${contigId}`);
-            const data = await response.json();
-            
-            if (data.error) {
-                resultDiv.innerHTML = `<p style="color: red;">Error: ${data.error}</p>`;
-            } else {
-                // Định dạng hiển thị features chi tiết hơn
-                let featuresHtml = '<ul>';
-                if (data.features && data.features.length > 0) {
-                    featuresHtml += data.features.map(f => {
-                        const product = f.qualifiers.product ? f.qualifiers.product.join('; ') : 'N/A';
-                        const note = f.qualifiers.note ? f.qualifiers.note.join('; ') : '';
-                        return `<li>
-                            <strong>${f.type}</strong> at ${f.location}
-                            <br>Product: ${product}
-                            <br>Note: ${note}
-                        </li>`;
-                    }).join('');
-                } else {
-                    featuresHtml += '<li>No annotated features (gene, CDS, etc.) found</li>';
+            const form = e.target;
+            const species = form.species.value;
+            let contigId = form.contig_id.value.trim(); // Dùng 'let' để có thể sửa đổi
+
+            // --- SỬA LỖI QUAN TRỌNG: Loại bỏ ký tự '>' ở đầu Contig ID ---
+            if (contigId.startsWith('>')) {
+                contigId = contigId.substring(1).trim();
+            }
+
+            if (!contigId) {
+                // Xử lý nếu chuỗi sau khi cắt '>' bị rỗng
+                alert("Vui lòng nhập Contig ID hoặc Gene ID hợp lệ.");
+                return;
+            }
+            // -------------------------------------------------------------
+
+            const statusDiv = document.getElementById('search-status');
+            const resultsDiv = document.getElementById('search-results');
+            const submitButton = form.querySelector('button[type="submit"]');
+            const loadingSpinner = document.getElementById('loading-spinner');
+            const searchText = document.getElementById('search-text');
+
+            // --- UI State: Loading ---
+            statusDiv.classList.add('hidden');
+            resultsDiv.classList.add('hidden');
+            searchText.textContent = 'Đang tìm...';
+            loadingSpinner.classList.remove('hidden');
+            submitButton.disabled = true;
+
+            try {
+                // Sử dụng contigId đã được làm sạch
+                const url = `/api/gene_search?species=${encodeURIComponent(species)}&contig_id=${encodeURIComponent(contigId)}`;
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Lỗi không xác định khi tra cứu gen.');
                 }
-                featuresHtml += '</ul>';
 
-                resultDiv.innerHTML = `
-                    <h3>Results for Contig: ${data.contig_id} (${data.species})</h3>
-                    <p><strong>Description:</strong> ${data.description}</p>
-                    <p><strong>Length:</strong> ${data.sequence_length} bp</p>
-                    <h4>Features:</h4>
-                    ${featuresHtml}
-                `;
+                // --- Handle Success ---
+
+                // Cập nhật kết quả
+                document.getElementById('result-description').textContent = data.description;
+                document.getElementById('result-contig').textContent = data.contig_id;
+                document.getElementById('result-length').textContent = data.sequence_length.toLocaleString();
+                document.getElementById('result-features-count').textContent = data.features ? data.features.length.toLocaleString() : '0';
+
+                // Cập nhật link xem chi tiết
+                const viewLink = document.getElementById('gene-view-link');
+                viewLink.href = `/gene_view?species=${encodeURIComponent(species)}&contig_id=${encodeURIComponent(data.contig_id)}`;
+
+                // Hiển thị và thông báo
+                resultsDiv.classList.remove('hidden');
+                statusDiv.innerHTML = '<span class="text-green-700 font-semibold">Tìm thấy gen.</span>';
+                statusDiv.classList.remove('bg-red-100');
+                statusDiv.classList.add('bg-green-100');
+
+
+            } catch (error) {
+                // --- Handle Error ---
+                resultsDiv.classList.add('hidden');
+                statusDiv.innerHTML = `<span class="text-red-700 font-semibold">Lỗi: ${error.message}</span>`;
+                statusDiv.classList.remove('bg-green-100');
+                statusDiv.classList.add('bg-red-100');
+            } finally {
+                // --- UI State: Finished ---
+                statusDiv.classList.remove('hidden');
+                searchText.textContent = 'Tìm kiếm';
+                loadingSpinner.classList.add('hidden');
+                submitButton.disabled = false;
             }
         });
     </script>

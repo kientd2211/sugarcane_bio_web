@@ -1,111 +1,197 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>BLAST Search - Sugarcane Genome Hub</title>
-    <style>/* Dùng CSS cũ của bạn */</style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phân tích BLASTN</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8f9fa; }
+        .card { background-color: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        .fasta-input { min-height: 200px; }
+        /* Style for BLAST results table */
+        #blast-results th { background-color: #e0f2f1; color: #004d40; }
+        #blast-results tbody tr:nth-child(even) { background-color: #f5f5f5; }
+        #blast-results tbody tr:hover { background-color: #e3f2fd; cursor: pointer; }
+    </style>
 </head>
-<body>
-    <header>
-        <h1>BLAST Search - Sugarcane Genome Hub</h1>
-    </header>
-    <div class="container">
-        <section>
-            <h2>BLAST Search</h2>
-            <form id="blastForm">
-                <label for="species_select_blast">Target Species:</label>
-                <select id="species_select_blast" name="species" required>
-                    {% for species in species_list %}
-                    <option value="{{ species }}">{{ species }}</option>
-                    {% endfor %}
-                </select>
-                
-                <label for="sequence">Enter Query Sequence (FASTA format):</label>
-                <textarea id="sequence" name="sequence" rows="6" cols="50" placeholder=">my_sequence\nATCG..."></textarea>
+<body class="p-4 md:p-8">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header & Navigation -->
+        <header class="mb-8">
+            <h1 class="text-4xl font-extrabold text-gray-900 mb-2">Phân tích Trình tự (BLASTN)</h1>
+            <p class="text-gray-600">Đối chiếu trình tự nucleotide của bạn với bộ gen đã chú giải.</p>
+            <nav class="mt-4">
+                <a href="/" class="text-blue-600 hover:text-blue-800 font-medium transition duration-150">← Quay lại Trang Chủ</a>
+            </nav>
+        </header>
 
-                <label for="evalue">E-value threshold:</label>
-                <input type="number" id="evalue" name="evalue" value="10" min="0" step="0.1">
-                <label for="max_hits">Max hits:</label>
-                <input type="number" id="max_hits" name="max_hits" value="10" min="1">
-                <button type="submit">Search</button>
-            </form>
-            
-            <div id="blastResult">
-                <h3>BLAST Hits (Format: Tabular)</h3>
-                <table border="1">
-                    <thead>
-                        <tr>
-                            <th>Query ID</th>
-                            <th>Subject ID</th>
-                            <th>% Identity</th>
-                            <th>Alignment Length</th>
-                            <th>Mismatches</th>
-                            <th>Gap Opens</th>
-                            <th>Q. Start</th>
-                            <th>Q. End</th>
-                            <th>S. Start</th>
-                            <th>S. End</th>
-                            <th>E-value</th>
-                            <th>Bit Score</th>
-                        </tr>
-                    </thead>
-                    <tbody id="resultBody"> 
-                        <tr><td colspan="12">Enter sequence and click Search to see results.</td></tr>
-                    </tbody>
-                </table>
+        <main class="space-y-8">
+            <!-- Input Form -->
+            <div class="card p-6">
+                <form id="blast-form" class="space-y-4">
+                    <!-- Sequence Input -->
+                    <div>
+                        <label for="sequence" class="block text-sm font-medium text-gray-700 mb-1">Trình tự Nucleotide (Định dạng FASTA hoặc trình tự thô)</label>
+                        <textarea id="sequence" name="sequence" rows="8" required class="fasta-input w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150" placeholder=">query_seq&#10;ATGCGTACGTACGTACGTAC..."></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- Target Species -->
+                        <div>
+                            <label for="species" class="block text-sm font-medium text-gray-700 mb-1">Chọn Loài Mục tiêu</label>
+                            <select id="species" name="species" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                                {% for species in species_list %}
+                                    <option value="{{ species }}">{{ species }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- E-value -->
+                        <div>
+                            <label for="evalue" class="block text-sm font-medium text-gray-700 mb-1">Ngưỡng E-value (ví dụ: 1e-5)</label>
+                            <input type="text" id="evalue" name="evalue" value="10" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+
+                        <!-- Max Hits -->
+                        <div>
+                            <label for="max_hits" class="block text-sm font-medium text-gray-700 mb-1">Số lượng Kết quả Tối đa</label>
+                            <input type="number" id="max_hits" name="max_hits" value="10" min="1" max="100" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-150 shadow-md">
+                        <span id="submit-text">Chạy BLASTN</span>
+                        <svg id="loading-spinner" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </button>
+                    <div id="blast-status" class="mt-4 p-3 rounded-lg text-center hidden"></div>
+                </form>
             </div>
-        </section>
+
+            <!-- Results Table -->
+            <div id="results-section" class="card p-6 hidden">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Kết quả BLAST Hits</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 border border-gray-300 rounded-lg" id="blast-results">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">Query ID</th>
+                                <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">Subject ID</th>
+                                <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">% Identity</th>
+                                <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">Alignment Length</th>
+                                <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">Mismatches</th>
+                                <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">Gap Opens</th>
+                                <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">Query Start</th>
+                                <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">Query End</th>
+                                <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">Subject Start</th>
+                                <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">Subject End</th>
+                                <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">E-value</th>
+                                <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">Bit Score</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200" id="blast-results-body">
+                            <!-- Results will be injected here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
     </div>
-    
+
     <script>
-        // Cập nhật script BLAST để gửi cả trường species
-        document.getElementById('blastForm').addEventListener('submit', async (event) => {
-            event.preventDefault();
-            const form = event.target;
-            const resultBody = document.getElementById('resultBody');
-            resultBody.innerHTML = '<tr><td colspan="12">Loading...</td></tr>';
-            
-            const formData = new FormData(form);
+        document.getElementById('blast-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
 
-            console.log('resultBody:', resultBody);
-            
-            // Thay đổi URL API
-            const response = await fetch('/api/blast/search', {
-                method: 'POST',
-                body: formData
-            });
-            const data = await response.json();
+            const form = e.target;
+            const sequence = form.sequence.value.trim();
+            const species = form.species.value;
+            const evalue = form.evalue.value;
+            const maxHits = form.max_hits.value;
+            const statusDiv = document.getElementById('blast-status');
+            const submitButton = form.querySelector('button[type="submit"]');
+            const submitText = document.getElementById('submit-text');
+            const loadingSpinner = document.getElementById('loading-spinner');
+            const resultsSection = document.getElementById('results-section');
+            const resultsBody = document.getElementById('blast-results-body');
 
-            // ... (Phần xử lý kết quả và lỗi giữ nguyên hoặc làm đẹp thêm) ...
-            
-            resultBody.innerHTML = '';
-            if (data.error) {
-                resultBody.innerHTML = `<tr><td colspan="12">Error: ${data.error}</td></tr>`;
-            } else if (data.result && data.result.length > 0 && data.result[0] !== "No hits found") {
-                data.result.forEach(row => {
-                    const cols = row.split('\t');
-                    const e_value = parseFloat(cols[10]).toExponential(2); 
-                    const bit_score = parseFloat(cols[11]).toFixed(1); 
-                    
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>${cols[0]}</td>
-                        <td>${cols[1]}</td>
-                        <td>${cols[2]}</td>
-                        <td>${cols[3]}</td>
-                        <td>${cols[4]}</td>
-                        <td>${cols[5]}</td>
-                        <td>${cols[6]}</td>
-                        <td>${cols[7]}</td>
-                        <td>${cols[8]}</td>
-                        <td>${cols[9]}</td>
-                        <td>${e_value}</td>
-                        <td>${bit_score}</td>
-                    `;
-                    resultBody.appendChild(tr);
+            // --- UI State: Loading ---
+            statusDiv.classList.add('hidden');
+            resultsSection.classList.add('hidden');
+            submitText.textContent = 'Đang chạy...';
+            loadingSpinner.classList.remove('hidden');
+            submitButton.disabled = true;
+
+            const formData = new FormData();
+            formData.append('species', species);
+            formData.append('sequence', sequence);
+            formData.append('evalue', evalue);
+            formData.append('max_hits', maxHits);
+
+            try {
+                const response = await fetch('/api/blast/search', {
+                    method: 'POST',
+                    body: formData
                 });
-            } else {
-                resultBody.innerHTML = '<tr><td colspan="12">No hits found</td></tr>';
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Lỗi không xác định khi chạy BLAST.');
+                }
+
+                // --- Handle Success ---
+                resultsBody.innerHTML = '';
+                
+                if (data.result.length > 0 && data.result[0] !== "No hits found") {
+                    data.result.forEach(hit => {
+                        const fields = hit.split('\t');
+                        const row = resultsBody.insertRow();
+                        fields.forEach((field, index) => {
+                            const cell = row.insertCell();
+                            cell.className = 'px-3 py-2 text-sm text-gray-800';
+                            
+                            // Highlight Contig ID (Subject ID) and make it clickable
+                            if (index === 1) { 
+                                const contigId = field;
+                                const link = document.createElement('a');
+                                link.href = `/gene_view?species=${encodeURIComponent(species)}&contig_id=${encodeURIComponent(contigId)}`;
+                                link.textContent = contigId;
+                                link.className = 'text-blue-600 hover:text-blue-800 font-semibold';
+                                cell.appendChild(link);
+                            } else {
+                                cell.textContent = field;
+                            }
+                        });
+                    });
+                    resultsSection.classList.remove('hidden');
+                    statusDiv.innerHTML = '<span class="text-green-700 font-semibold">BLAST hoàn tất thành công.</span>';
+                    statusDiv.classList.remove('bg-red-100', 'text-red-700');
+                    statusDiv.classList.add('bg-green-100');
+
+                } else {
+                    resultsSection.classList.add('hidden');
+                    statusDiv.innerHTML = '<span class="text-yellow-700 font-semibold">Không tìm thấy hits nào với tiêu chí đã cho.</span>';
+                    statusDiv.classList.remove('bg-red-100', 'bg-green-100');
+                    statusDiv.classList.add('bg-yellow-100');
+                }
+
+            } catch (error) {
+                // --- Handle Error ---
+                statusDiv.innerHTML = `<span class="text-red-700 font-semibold">Lỗi: ${error.message}</span>`;
+                statusDiv.classList.remove('bg-green-100', 'bg-yellow-100');
+                statusDiv.classList.add('bg-red-100');
+                resultsSection.classList.add('hidden');
+            } finally {
+                // --- UI State: Finished ---
+                statusDiv.classList.remove('hidden');
+                submitText.textContent = 'Chạy BLASTN';
+                loadingSpinner.classList.add('hidden');
+                submitButton.disabled = false;
             }
         });
     </script>
