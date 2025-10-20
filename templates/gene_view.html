@@ -178,24 +178,44 @@
         const contigId = params.get('contig_id');
         const BASE_API_URL = '/api/gene_search';
 
-        // Biến toàn cục để lưu trữ dữ liệu đã tải, phục vụ cho việc redraw khi resize
+        // Biến toàn cục để lưu trữ dữ liệu đã tải, phục vụ cho việc redraw khi resize và tạo link JBrowse
         let loadedData = null;
 
-        function createJBrowseLink(gene) {
-            // Dữ liệu gen mía mẫu (giả định bạn đã có đối tượng 'gene' được load)
-            // Ví dụ: gene = { name: 'ScSUS1', chromosome: 'Chr01', start: 120000, end: 128500 }
+        // Hàm tạo link JBrowse
+        function createJBrowseLink(data) {
+            // Sử dụng contig_id làm ID sequence và sequence_length làm giới hạn range
+            if (!data || !data.contig_id || !data.sequence_length) {
+                console.error("Dữ liệu không đủ để tạo liên kết JBrowse.");
+                return '#'; // Trả về # nếu dữ liệu không hợp lệ
+            }
 
+            const contigId = data.contig_id;
+            const length = data.sequence_length;
+            
             // Mã hóa tham số để gửi qua URL
             const params = new URLSearchParams({
-                chrom: gene.chromosome,
-                start: gene.start,
-                end: gene.end,
-                name: gene.name
+                // Giả định contig_id là ID sequence (chrom)
+                chrom: contigId,
+                start: 1, 
+                end: length, 
+                name: contigId // Dùng contigId làm tên gen/vị trí được tìm kiếm
             }).toString();
 
-            // Liên kết đến tệp jbrowse_view.html mới
-            return `jbrowse_view.html?${params}`;
+            // ĐÃ CẬP NHẬT: Sử dụng đường dẫn tuyệt đối /jbrowse_view (bỏ .html)
+            // Lỗi 404 cho thấy server không map /jbrowse_view.html với một route.
+            return `/jbrowse_view?${params}`;
         }
+        
+        // Handler cho nút JBrowse
+        function handleJBrowseClick() {
+            if (loadedData && loadedData.contig_id && loadedData.sequence_length) {
+                window.location.href = createJBrowseLink(loadedData);
+            } else {
+                console.error("Dữ liệu gen chưa được tải hoặc không hợp lệ để tạo liên kết JBrowse.");
+                // Trong môi trường thực, bạn nên hiển thị thông báo thân thiện cho người dùng
+            }
+        }
+
 
         // Hàm lấy màu dựa trên loại feature
         function getFeatureColor(type) {
@@ -204,13 +224,14 @@
                 case 'trna': return '#0984e3'; // Blue
                 case 'rrna': return '#6c5ce7'; // Purple
                 case 'gene': return '#00b894'; // Green
+                case 'exon': return '#ff7675'; // Light Red
                 default: return '#fdcb6e'; // Yellow/Other
             }
         }
 
         // Hàm format trình tự thành từng block 60 ký tự
         function formatSequence(sequence) {
-            if (!sequence) return 'Không có trình tự để hiển thị.'; // Hiển thị thông báo nếu trình tự trống
+            if (!sequence) return 'Không có trình tự để hiển thị.'; 
             const charsPerLine = 60;
             let formatted = '';
 
@@ -229,7 +250,21 @@
 
         // Hàm Tải file (placeholder)
         window.downloadFile = function (format) {
-            console.log(`Tính năng Tải xuống file ${format.toUpperCase()} cho ${contigId} đang được phát triển...`);
+            const fileName = `${contigId}.${format}`;
+            console.log(`Tính năng Tải xuống file ${fileName} đang được phát triển...`);
+            // Thêm logic fetch API để tải file thực tế
+            
+            // Ví dụ tạo blob và tải xuống (Chỉ dành cho demo, cần logic API thực tế)
+            const mockContent = format === 'fasta' ? 
+                                `>${contigId}\n${loadedData?.sequence || 'Sequence not loaded.'}` : 
+                                `##gff-version 3\n# Contig: ${contigId}\n...`;
+            const blob = new Blob([mockContent], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         /**
@@ -253,6 +288,7 @@
             }
 
             // 2. Tìm kiếm tất cả các cặp số [start:end]
+            // Chú ý: Match chỉ tìm kiếm cặp số, không quan tâm ký tự ^ (chưa biết) hoặc < (lớn hơn/nhỏ hơn)
             const coordinateMatches = [...locationString.matchAll(/(\d+):(\d+)/g)];
 
             if (coordinateMatches.length > 0) {
@@ -266,6 +302,13 @@
                 start = Math.min(...allCoords);
                 // Vị trí kết thúc tổng thể là max của tất cả các tọa độ
                 end = Math.max(...allCoords);
+            } else {
+                // Xử lý trường hợp chỉ có một tọa độ đơn (ví dụ: source 1:5000)
+                const singleMatch = locationString.match(/(\d+)\.\.(\d+)/);
+                if (singleMatch) {
+                    start = parseInt(singleMatch[1]);
+                    end = parseInt(singleMatch[2]);
+                }
             }
 
             return { start, end, strand };
@@ -280,16 +323,13 @@
 
             // Lấy chiều rộng hiện tại của container
             const width = container.getBoundingClientRect().width - margin.left - margin.right;
+            if (width <= 0) return; // Thoát nếu container chưa có kích thước
 
-            // Chiều cao tối thiểu 150px
             const minHeight = 150;
-            // Chiều cao thực tế của vùng vẽ (không tính margin)
-            // const height = +svg.attr("height") - margin.top - margin.bottom;
-
+            
             // Cập nhật thuộc tính width và height cho SVG để đảm bảo nó phản hồi
             svg.attr("width", container.getBoundingClientRect().width);
             svg.attr("height", minHeight + margin.top + margin.bottom);
-
 
             svg.selectAll("*").remove(); // Clear previous drawings
 
@@ -303,7 +343,6 @@
                 .domain([1, safeLength])
                 .range([0, width]);
 
-            // Đã lọc ở hàm loadGeneData, chỉ cần đảm bảo có tọa độ
             const validFeatures = features.filter(d => d.start_coord !== null);
 
             const centerLineY = minHeight / 2; // Sử dụng chiều cao tối thiểu cho việc căn giữa
@@ -334,11 +373,11 @@
                 .enter()
                 .append("rect")
                 .attr("class", "feature-rect")
-                .attr("x", d => xScale(d.start_coord)) // SỬ DỤNG start_coord
+                .attr("x", d => xScale(d.start_coord)) 
                 .attr("y", d => d.strand === '-' ? yOffsetNegative : yOffsetPositive) // Differentiate by strand
                 .attr("width", d => {
-                    const startPos = xScale(d.start_coord); // SỬ DỤNG start_coord
-                    const endPos = xScale(d.end_coord);     // SỬ DỤNG end_coord
+                    const startPos = xScale(d.start_coord); 
+                    const endPos = xScale(d.end_coord); 
                     const calculatedWidth = endPos - startPos;
                     // Trả về chiều rộng tối thiểu là 2 nếu chiều rộng tính toán quá nhỏ
                     return Math.max(2, calculatedWidth);
@@ -348,12 +387,12 @@
                 .on("mouseover", function (event, d) {
                     d3.select(this).attr("stroke", "black").attr("stroke-width", 2);
                     tooltip.html(`
-                        <strong>Loại:</strong> ${d.type}<br>
-                        <strong>ID:</strong> ${d.qualifiers?.gene?.[0] || 'N/A'}<br>
-                        <strong>Vị trí:</strong> ${d.start_coord ? d.start_coord.toLocaleString() : 'N/A'} - ${d.end_coord ? d.end_coord.toLocaleString() : 'N/A'} (Locus: ${d.location})<br>
-                        <strong>Sợi:</strong> ${d.strand || 'Không xác định'}<br>
-                        <strong>Chú giải:</strong> ${d.description || 'Không có'}
-                    `)
+                        <strong>Loại:</strong> ${d.type}<br>
+                        <strong>ID:</strong> ${d.qualifiers?.gene?.[0] || 'N/A'}<br>
+                        <strong>Vị trí:</strong> ${d.start_coord ? d.start_coord.toLocaleString() : 'N/A'} - ${d.end_coord ? d.end_coord.toLocaleString() : 'N/A'} (Locus: ${d.location})<br>
+                        <strong>Sợi:</strong> ${d.strand || 'Không xác định'}<br>
+                        <strong>Chú giải:</strong> ${d.description || 'Không có'}
+                    `)
                         .style("left", (event.pageX + 10) + "px")
                         .style("top", (event.pageY - 10) + "px")
                         .style("display", "block");
@@ -423,7 +462,7 @@
                         const qualifiers = feature.qualifiers || {};
                         const product = qualifiers.product ? qualifiers.product[0] : '';
                         const gene = qualifiers.gene ? qualifiers.gene[0] : '';
-                        const description = product || gene || 'N/A';
+                        const description = product || gene || qualifiers.note?.[0] || 'N/A';
 
                         return {
                             ...feature,
@@ -441,8 +480,6 @@
 
                 // Cập nhật thông tin tóm tắt
                 document.getElementById('page-title').textContent = `Chi tiết Contig: ${contigId}`;
-
-                // Nếu là S_bicolor, có thể thêm tên loài cụ thể
                 document.getElementById('gene-description').textContent = data.description || 'Không có mô tả chi tiết.';
                 document.getElementById('gene-length').textContent = data.sequence_length ? data.sequence_length.toLocaleString() : 'N/A';
                 document.getElementById('gene-features-count').textContent = data.features ? data.features.length.toLocaleString() : '0';
@@ -450,26 +487,18 @@
                 // Cập nhật trình tự
                 document.getElementById('nucleotide-sequence').textContent = formatSequence(data.sequence);
 
-                // Cập nhật bảng features (SỬ DỤNG features đã được làm giàu thông tin)
+                // Cập nhật bảng features 
                 const featuresBody = document.getElementById('features-body');
                 featuresBody.innerHTML = '';
 
                 if (data.features && data.features.length > 0) {
                     data.features.forEach(feature => {
-                        // Trích xuất thông tin mô tả chi tiết từ qualifiers
-                        const qualifiers = feature.qualifiers || {};
-                        const product = qualifiers.product ? qualifiers.product[0] : '';
-                        const gene = qualifiers.gene ? qualifiers.gene[0] : '';
-
-                        // Ưu tiên Product, sau đó là Gene, nếu không có thì ghi 'N/A'
-                        const description = product || gene || 'N/A';
-
                         const row = featuresBody.insertRow();
-                        // Thêm 3 cột: Type, Location, Description/Product
+                        // Sử dụng thông tin description đã được xử lý trong map ở trên
                         row.innerHTML = `
                             <td class="px-2 py-2 whitespace-nowrap text-sm text-gray-900 font-mono w-[15%]">${feature.type || 'N/A'}</td>
                             <td class="px-2 py-2 text-xs text-gray-500 w-[25%] font-mono break-words">${feature.location || '?'}</td>
-                            <td class="px-2 py-2 text-sm text-gray-700 w-[60%]">${description}</td>
+                            <td class="px-2 py-2 text-sm text-gray-700 w-[60%]">${feature.description}</td>
                         `;
                     });
                 } else {
@@ -478,7 +507,6 @@
 
                 // Trực quan hóa
                 if (loadedData.validFeatures && loadedData.sequence_length) {
-                    // Dùng validFeatures (đã được lọc và có tọa độ hợp lệ)
                     visualizeFeatures(loadedData.validFeatures, loadedData.sequence_length);
                 } else {
                     d3.select("#genome-visualization").selectAll("*").remove(); // Xóa nếu không có data
@@ -499,7 +527,12 @@
             }
         }
 
-        window.onload = loadGeneData;
+        window.onload = function() {
+            loadGeneData();
+            // Gắn sự kiện click cho nút JBrowse sau khi DOM đã tải
+            document.getElementById('jbrowse-button').onclick = handleJBrowseClick;
+        };
+
         window.onresize = () => {
             // Redraw visualization on resize using the saved data
             if (loadedData && loadedData.validFeatures && loadedData.sequence_length) {

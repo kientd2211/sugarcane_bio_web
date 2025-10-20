@@ -21,10 +21,6 @@ if os.path.exists(PROCESSED_DATA_FILE):
 else:
     print(f"Lỗi: Không tìm thấy file {PROCESSED_DATA_FILE}. Vui lòng chạy process_gbff.py.")
 
-
-# THÊM DỮ LIỆU MẪU ĐỂ KIỂM TRA TÍNH NĂNG GENE_VIEW
-# Điều này đảm bảo Contig ID JAKOGQ010001029.1 luôn tồn tại trong S_spontaneum 
-# cho mục đích kiểm tra.
 MOCK_SPECIES = "S_spontaneum"
 MOCK_CONTIG = "JAKOGQ010001029.1"
 MOCK_DATA = {
@@ -237,6 +233,19 @@ def primer_design_api():
         "forward": fwd_analysis,
         "reverse": rev_analysis
     })
+
+@app.route('/jbrowse_view')
+def jbrowse_view():
+    # Lấy các tham số từ URL
+    chrom = request.args.get('chrom')
+    start = request.args.get('start')
+    end = request.args.get('end')
+    name = request.args.get('name')
+    
+    # Hàm render_template sẽ tìm và hiển thị tệp HTML
+    # Bạn cần đảm bảo tệp jbrowse_view.html nằm trong thư mục 'templates'
+    return render_template('jbrowse_view.html', 
+                           chrom=chrom, start=start, end=end, name=name)
 
 # -----------------------------------------------------------------
 # 6. CHẠY ỨNG DỤNG
