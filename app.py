@@ -169,6 +169,8 @@ def blast_search():
         
         return jsonify({"result": result.stdout.splitlines() if result.stdout else ["No hits found"]})
 
+
+
     except subprocess.CalledProcessError as e:
         print(f"\n--- BLASTN EXECUTION ERROR ---\n")
         print(f"Error command: {e.cmd}")
@@ -182,6 +184,7 @@ def blast_search():
 # -----------------------------------------------------------------
 # 5. API: THIẾT KẾ PRIMER PCR
 # -----------------------------------------------------------------
+
 def analyze_primer(seq):
     """Tính toán Tm và %GC cho một trình tự primer."""
     
@@ -203,6 +206,7 @@ def analyze_primer(seq):
         "tm": f"{tm:.2f} °C",
         "gc_percent": f"{gc_percent:.2f} %"
     }
+
 
 @app.route('/api/primer/design', methods=['POST'])
 def primer_design_api():
@@ -238,6 +242,7 @@ def primer_design_api():
         "forward": fwd_analysis,
         "reverse": rev_analysis
     })
+
 
 @app.route('/jbrowse_view')
 def jbrowse_view():
