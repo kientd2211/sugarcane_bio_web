@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thiết Kế CRISPR Tefor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+
+        .container-box {
+            background-color: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+        }
+
+        .sequence-input {
+            font-family: monospace;
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        .gRNA-highlight {
+            font-weight: 700;
+            color: #d97706; /* Amber-600 */
+        }
+
+        .pam-highlight {
+            font-weight: 700;
+            color: #ef4444; /* Red-500 */
+        }
+
+        .result-code {
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+            background-color: #f7f9fb;
+            border-radius: 8px;
+            padding: 1rem;
+            border: 1px solid #e5e7eb;
+        }
+
+        .loading-animation {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #10b981; /* Emerald-500 */
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body class="p-4 md:p-8">
+    <!-- Header -->
+    <header class="bg-teal-600 text-white p-4 shadow-lg sticky top-0 z-10 rounded-b-xl">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <h1 class="text-2xl font-bold">Module Thiết Kế CRISPR Tefor</h1>
+            <a href="/" class="text-sm opacity-90 hover:opacity-100 transition-opacity">
+                <span class="hidden sm:inline">Quay lại Trang Chủ</span>
+                <span class="sm:hidden">&larr; Trang Chủ</span>
+            </a>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto mt-8 space-y-8">
+        <!-- Thông tin Contig -->
+        <div class="container-box">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Thông tin mục tiêu</h2>
+            <p class="text-gray-600">Loài: <span id="target-species" class="font-medium text-teal-600">...</span></p>
+            <p class="text-gray-600">Contig ID: <span id="target-contig" class="font-medium text-teal-600 font-mono">...</span></p>
+        </div>
+
+        <!-- Vùng Thiết Kế -->
+        <div class="container-box">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Nhập Trình Tự DNA Mục Tiêu (Contig Sequence)</h2>
+            <div class="mb-4">
+                <label for="dna-sequence" class="block text-sm font-medium text-gray-700 mb-2">Trình tự DNA (chỉ chứa A, G, C, T/U, không phân biệt hoa thường):</label>
+                <textarea id="dna-sequence" class="sequence-input w-full p-3 border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 transition duration-150"
+                    placeholder="Dán trình tự Contig hoặc Gen mục tiêu vào đây (ít nhất 25 ký tự).">AGCTAGCacatactctctccgtccctgaaagaat</textarea>
+                <p id="sequence-length" class="text-sm text-gray-500 mt-1">Độ dài trình tự: 34 ký tự</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div>
+                    <label for="pam-sequence" class="block text-sm font-medium text-gray-700 mb-2">Trình tự PAM (ví dụ: NGG cho Cas9):</label>
+                    <input type="text" id="pam-sequence" value="NGG"
+                        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 font-mono uppercase" placeholder="NGG">
+                </div>
+                <div>
+                    <label for="grna-length" class="block text-sm font-medium text-gray-700 mb-2">Độ dài gRNA (thường là 20):</label>
+                    <input type="number" id="grna-length" value="20" min="15" max="30"
+                        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500">
+                </div>
+            </div>
+
+            <button id="design-button"
+                class="w-full flex items-center justify-center bg-teal-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-teal-700 transition duration-150 shadow-lg">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                Thiết Kế gRNA Bằng AI (Gemini)
+            </button>
+        </div>
+
+        <!-- Vùng Kết Quả -->
+        <div class="container-box">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Kết Quả Thiết Kế</h2>
+            
+            <!-- Loading and Error State -->
+            <div id="loading-state" class="hidden flex flex-col items-center justify-center py-10 space-y-3">
+                <div class="loading-animation"></div>
+                <p class="text-lg text-teal-600 font-semibold">AI đang thiết kế gRNA (Gemini-2.5-Flash)...</p>
+                <p class="text-sm text-gray-500">Quá trình này có thể mất vài giây.</p>
+            </div>
+
+            <div id="error-message" class="hidden bg-red-100 border-l-4 border-red-500 text-red-700 p-4" role="alert">
+                <p class="font-bold">Lỗi!</p>
+                <p id="error-text"></p>
+            </div>
+
+            <!-- Design Results -->
+            <div id="design-results" class="space-y-6 hidden">
+                <div class="border-b pb-4">
+                    <h3 class="text-xl font-semibold mb-2">Các gRNA Tiềm năng (Phân tích của AI)</h3>
+                    <div id="grna-list" class="space-y-3">
+                        <!-- gRNA results will be injected here -->
+                    </div>
+                </div>
+
+                <div class="pt-4">
+                    <h3 class="text-xl font-semibold mb-2">Trực quan hóa gRNA trên Trình tự</h3>
+                    <div id="sequence-visualization" class="result-code overflow-x-auto text-base">
+                        <!-- Highlighted sequence will be injected here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // === KHÓA API VÀ CẤU HÌNH API LLM ===
+        // API Key sẽ được Canvas cung cấp tự động.
+        // DÙNG CHUỖI RỖNG ĐỂ CANVAS TỰ ĐỘNG CHÈN KEY KHI GỌI FETCH
+        const apiKey = "AIzaSyDTKeXuhnGkS0fmvqyZbgDr1wWZ9ACLK-g"; 
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+        // === BIẾN TOÀN CỤC VÀ HÀM TIỆN ÍCH ===
+        const params = new URLSearchParams(window.location.search);
+        const species = params.get('species') || 'Unknown Species';
+        const contigId = params.get('contig_id') || 'Manual Input';
+        let currentSequence = "";
+
+        // Chuyển đổi chuỗi PAM: 'N' -> '.' (bất kỳ nucleotide nào)
+        function pamToRegex(pam) {
+            return pam.toUpperCase().replace(/N/g, '.');
+        }
+
+        // Cập nhật độ dài trình tự hiển thị
+        function updateSequenceLength() {
+            const sequenceInput = document.getElementById('dna-sequence');
+            const sequenceLengthDisplay = document.getElementById('sequence-length');
+            const cleanedSequence = sequenceInput.value.replace(/[^AGCTUagctu]/g, '').toUpperCase();
+            sequenceLengthDisplay.textContent = `Độ dài trình tự: ${cleanedSequence.length} ký tự`;
+            currentSequence = cleanedSequence;
+        }
+        
+        // Hàm hiển thị trạng thái tải và lỗi
+        function showLoading(show) {
+            document.getElementById('loading-state').classList.toggle('hidden', !show);
+            document.getElementById('design-button').disabled = show;
+            document.getElementById('design-button').classList.toggle('opacity-50', show);
+            document.getElementById('design-results').classList.add('hidden');
+            document.getElementById('error-message').classList.add('hidden');
+        }
+
+        function showError(message) {
+            document.getElementById('error-message').classList.remove('hidden');
+            document.getElementById('error-text').textContent = message;
+            document.getElementById('design-results').classList.add('hidden');
+        }
+
+        /**
+         * Hàm fetch có cơ chế thử lại (Exponential Backoff)
+         * Đã được tinh chỉnh để xử lý lỗi API Key (403 Forbidden)
+         */
+        async function fetchWithRetry(url, payload, maxRetries = 3) {
+            let error = null;
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (response.status === 403) {
+                        // Lỗi 403: Rất có thể là lỗi API Key trong Canvas
+                        throw new Error("403 Forbidden: Lỗi xác thực API Key. Vui lòng kiểm tra môi trường Canvas.");
+                    }
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error?.message || `Lỗi API (HTTP ${response.status}): Không thể kết nối với mô hình AI.`);
+                    }
+
+                    return await response.json();
+                } catch (e) {
+                    error = e;
+                    console.error(`Lỗi trong lần thử ${i + 1}:`, e.message);
+
+                    if (i < maxRetries - 1) {
+                        const delay = Math.pow(2, i) * 1000;
+                        console.log(`Đang thử lại sau ${delay}ms...`);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    }
+                }
+            }
+            throw error;
+        }
+
+        // === LOGIC XỬ LÝ KẾT QUẢ VÀ TRỰC QUAN HÓA ===
+
+        /**
+         * Dùng AI để phân tích trình tự và đề xuất gRNA
+         */
+        async function fetchCrisprDesign() {
+            showLoading(true);
+
+            const sequence = currentSequence;
+            const pam = document.getElementById('pam-sequence').value.toUpperCase();
+            const grnaLength = document.getElementById('grna-length').value;
+
+            if (sequence.length < 25) {
+                showLoading(false);
+                showError("Trình tự DNA phải dài ít nhất 25 ký tự để thiết kế gRNA.");
+                return;
+            }
+
+            const prompt = `
+                Bạn là một công cụ thiết kế gRNA CRISPR chuyên nghiệp. Nhiệm vụ của bạn là:
+                1. Tìm kiếm tất cả các vị trí tiềm năng cho gRNA dài ${grnaLength} base pair (bp) kết hợp với trình tự PAM là "${pam}" trong trình tự DNA sau:
+                   ${sequence}
+                2. Sắp xếp kết quả theo định dạng JSON.
+
+                Định dạng đầu ra JSON (Sử dụng 'gRNA' cho trình tự 20bp và 'PAM' cho 3bp theo sau):
+                [
+                  { "gRNA": "...", "PAM": "...", "Start": 10, "End": 30, "Strand": "Forward" },
+                  ...
+                ]
+
+                Chỉ trả về JSON, không có văn bản giải thích.
+            `;
+
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "ARRAY",
+                        items: {
+                            type: "OBJECT",
+                            properties: {
+                                "gRNA": { "type": "STRING", "description": `Trình tự gRNA dài ${grnaLength} bp.` },
+                                "PAM": { "type": "STRING", "description": `Trình tự PAM ${pam.length} bp.` },
+                                "Start": { "type": "INTEGER", "description": "Vị trí bắt đầu của gRNA + PAM (1-based)." },
+                                "End": { "type": "INTEGER", "description": "Vị trí kết thúc của gRNA + PAM (1-based)." },
+                                "Strand": { "type": "STRING", "description": "Sợi ('Forward' hoặc 'Reverse')." }
+                            }
+                        }
+                    }
+                }
+            };
+
+            try {
+                const result = await fetchWithRetry(API_URL, payload);
+                showLoading(false);
+                
+                const jsonText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!jsonText) {
+                    throw new Error("Phản hồi của AI không chứa kết quả thiết kế.");
+                }
+
+                const designs = JSON.parse(jsonText);
+                if (!Array.isArray(designs) || designs.length === 0) {
+                    document.getElementById('grna-list').innerHTML = `<p class="text-gray-500">Không tìm thấy gRNA tiềm năng nào với tiêu chí PAM "${pam}" và độ dài ${grnaLength}bp.</p>`;
+                    document.getElementById('sequence-visualization').textContent = sequence;
+                    document.getElementById('design-results').classList.remove('hidden');
+                    return;
+                }
+                
+                renderResults(designs, sequence);
+
+            } catch (error) {
+                showLoading(false);
+                
+                let errorMessage = `Lỗi mạng hoặc API: Không thể thiết kế gRNA. Chi tiết: ${error.message}`;
+                 if (error.message.includes("403 Forbidden") || error.message.includes("API Key")) {
+                    errorMessage = "Lỗi Xác Thực API (403): Chức năng AI không thể truy cập khóa API. Vui lòng thử lại hoặc kiểm tra môi trường chạy ứng dụng.";
+                }
+
+                showError(errorMessage);
+                console.error("Lỗi thiết kế CRISPR:", error);
+            }
+        }
+        
+        // Hàm hiển thị kết quả và trực quan hóa
+        function renderResults(designs, fullSequence) {
+            const grnaListDiv = document.getElementById('grna-list');
+            const vizDiv = document.getElementById('sequence-visualization');
+            grnaListDiv.innerHTML = '';
+            vizDiv.innerHTML = ''; 
+
+            let visualizedSequence = fullSequence;
+            const offsets = []; // Dùng để tránh chồng lấn khi highlight HTML
+
+            designs.forEach((design, index) => {
+                // 1. Render List
+                const item = document.createElement('div');
+                item.className = 'p-3 border rounded-lg bg-gray-50 hover:shadow-sm transition duration-150 cursor-pointer';
+                item.innerHTML = `
+                    <p class="font-mono text-sm"><strong>${index + 1}. gRNA:</strong> <span class="gRNA-highlight">${design.gRNA}</span> - <span class="pam-highlight">${design.PAM}</span></p>
+                    <p class="text-xs text-gray-600">Vị trí: ${design.Start} - ${design.End} (${design.Strand})</p>
+                `;
+                item.onclick = () => highlightSequence(design, fullSequence); // Thêm chức năng highlight khi click
+                grnaListDiv.appendChild(item);
+
+                // Lưu offset để trực quan hóa
+                offsets.push({
+                    start: design.Start,
+                    end: design.End,
+                    gRNA: design.gRNA,
+                    PAM: design.PAM,
+                    index: index
+                });
+            });
+
+            // 2. Trực quan hóa (chỉ highlight gRNA đầu tiên theo mặc định)
+            if (designs.length > 0) {
+                highlightSequence(designs[0], fullSequence);
+                document.getElementById('design-results').classList.remove('hidden');
+            }
+        }
+
+        // Hàm highlight trình tự
+        function highlightSequence(design, fullSequence) {
+            const vizDiv = document.getElementById('sequence-visualization');
+            const sequenceLength = fullSequence.length;
+            let htmlSequence = fullSequence;
+
+            // Chuyển đổi vị trí 1-based thành 0-based index
+            const startIdx = design.Start - 1;
+            // Độ dài của gRNA + PAM
+            const len = design.gRNA.length + design.PAM.length;
+            const endIdx = startIdx + len;
+
+            if (startIdx >= 0 && endIdx <= sequenceLength) {
+                const pre = fullSequence.substring(0, startIdx);
+                const target = fullSequence.substring(startIdx, endIdx);
+                
+                // Phân tách gRNA và PAM trong vùng mục tiêu
+                const gRNA_seq = target.substring(0, design.gRNA.length);
+                const PAM_seq = target.substring(design.gRNA.length);
+
+                const highlightedPart = `<span title="gRNA: ${design.gRNA}" class="gRNA-highlight">${gRNA_seq}</span><span title="PAM: ${design.PAM}" class="pam-highlight">${PAM_seq}</span>`;
+                const post = fullSequence.substring(endIdx);
+
+                htmlSequence = pre + highlightedPart + post;
+            }
+
+            // Chia thành từng dòng để dễ đọc (60 ký tự/dòng)
+            const charsPerLine = 60;
+            let formattedHtml = '';
+            const paddingLength = String(sequenceLength).length;
+
+            for (let i = 0; i < htmlSequence.length; i += charsPerLine) {
+                let lineHtml = htmlSequence.substring(i, i + charsPerLine);
+                const lineNumber = String(i + 1).padStart(paddingLength, ' ');
+                formattedHtml += `<strong>${lineNumber}</strong>\t${lineHtml}\n`;
+            }
+
+            vizDiv.innerHTML = formattedHtml;
+        }
+
+
+        // === KHỞI TẠO ===
+        document.addEventListener('DOMContentLoaded', () => {
+            // Hiển thị thông tin contig
+            document.getElementById('target-species').textContent = species;
+            document.getElementById('target-contig').textContent = contigId;
+
+            // Lắng nghe thay đổi trình tự
+            const sequenceInput = document.getElementById('dna-sequence');
+            sequenceInput.addEventListener('input', updateSequenceLength);
+            updateSequenceLength(); // Khởi tạo ban đầu
+
+            // Lắng nghe nút thiết kế
+            document.getElementById('design-button').addEventListener('click', fetchCrisprDesign);
+        });
+    </script>
+</body>
+
+</html>

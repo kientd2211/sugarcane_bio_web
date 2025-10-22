@@ -59,6 +59,11 @@ def blast():
 def primer_design_page():
     return render_template('primer.html')
 
+@app.route('/crispr_designer')
+def crispr_designer():
+    """Hiển thị module thiết kế CRISPR Tefor."""
+    return render_template('crispr_tefor_designer.html')
+
 @app.route('/gene_view')
 def gene_view():
     species = request.args.get('species')

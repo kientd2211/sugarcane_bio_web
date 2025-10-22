@@ -141,6 +141,23 @@
                     </button>
                 </div>
 
+                <!-- Công cụ Phân tích Gen -->
+                <div class="card space-y-3">
+                    <h2 class="text-xl font-bold text-gray-800">Công cụ Phân tích Gen</h2>
+                    <!-- ĐÃ THAY THẾ: Nút CRISPR Designer thành Button và gán ID để xử lý động -->
+                    <button id="crispr-button"
+                        class="w-full flex items-center justify-center bg-teal-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-teal-700 transition duration-150 shadow-md">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        Thiết Kế CRISPR Tefor
+                    </button>
+                    <!-- Nút JBrowse (Giữ nguyên ID để JS handler hoạt động) -->
+                    <button id="jbrowse-button"
+                        class="w-full flex items-center justify-center bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition duration-150 shadow-md">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                        Xem Trực quan JBrowse
+                    </button>
+                </div>
+
                 <!-- Features Table -->
                 <div class="card space-y-3">
                     <h2 class="text-xl font-bold text-gray-800 mb-3">Bảng Đặc trưng (Features)</h2>
@@ -151,6 +168,8 @@
                                     <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Loại
                                     </th>
                                     <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Vị trí
+                                    </th>
+                                    <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Mô tả
                                     </th>
                                 </tr>
                             </thead>
@@ -164,12 +183,6 @@
         </main>
     </div>
 
-    <button id="jbrowse-button"
-        class="w-full mt-4 flex items-center justify-center bg-lime-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-lime-700 transition-shadow shadow-md"
-        onclick="window.location.href = createJBrowseLink(currentGeneData);">
-        Xem Trực quan JBrowse
-    </button>
-
     <div id="tooltip" class="tooltip hidden"></div>
 
     <script>
@@ -178,43 +191,70 @@
         const contigId = params.get('contig_id');
         const BASE_API_URL = '/api/gene_search';
 
-        // Biến toàn cục để lưu trữ dữ liệu đã tải, phục vụ cho việc redraw khi resize và tạo link JBrowse
+        // Biến toàn cục để lưu trữ dữ liệu đã tải, phục vụ cho việc redraw khi resize và tạo link JBrowse/CRISPR
         let loadedData = null;
+
+        // ====================================================================
+        // HÀM TẠO LIÊN KẾT ĐỘNG
+        // ====================================================================
 
         // Hàm tạo link JBrowse
         function createJBrowseLink(data) {
-            // Sử dụng contig_id làm ID sequence và sequence_length làm giới hạn range
             if (!data || !data.contig_id || !data.sequence_length) {
                 console.error("Dữ liệu không đủ để tạo liên kết JBrowse.");
-                return '#'; // Trả về # nếu dữ liệu không hợp lệ
+                return '#';
             }
 
             const contigId = data.contig_id;
             const length = data.sequence_length;
             
-            // Mã hóa tham số để gửi qua URL
             const params = new URLSearchParams({
-                // Giả định contig_id là ID sequence (chrom)
                 chrom: contigId,
                 start: 1, 
                 end: length, 
-                name: contigId // Dùng contigId làm tên gen/vị trí được tìm kiếm
+                name: contigId
             }).toString();
 
-            // ĐÃ CẬP NHẬT: Sử dụng đường dẫn tuyệt đối /jbrowse_view (bỏ .html)
-            // Lỗi 404 cho thấy server không map /jbrowse_view.html với một route.
             return `/jbrowse_view?${params}`;
         }
-        
+
         // Handler cho nút JBrowse
         function handleJBrowseClick() {
             if (loadedData && loadedData.contig_id && loadedData.sequence_length) {
                 window.location.href = createJBrowseLink(loadedData);
             } else {
                 console.error("Dữ liệu gen chưa được tải hoặc không hợp lệ để tạo liên kết JBrowse.");
-                // Trong môi trường thực, bạn nên hiển thị thông báo thân thiện cho người dùng
             }
         }
+
+        // HÀM MỚI: Tạo link CRISPR (Chỉ truyền species và contig_id)
+        function createCrisprLink(data) {
+            if (!data || !data.species || !data.contig_id) {
+                console.error("Dữ liệu không đủ để tạo liên kết CRISPR.");
+                return '#'; 
+            }
+            
+            const params = new URLSearchParams({
+                species: data.species,
+                contig_id: data.contig_id
+            }).toString();
+
+            return `/crispr_designer?${params}`;
+        }
+
+        // HÀM MỚI: Handler cho nút CRISPR
+        function handleCrisprClick() {
+            // Đảm bảo dữ liệu cơ bản đã được tải (loadedData có tồn tại)
+            if (loadedData) {
+                // Thêm trường 'species' vào loadedData nếu nó không có sẵn từ API (nhưng nó có từ params)
+                loadedData.species = loadedData.species || species;
+
+                window.location.href = createCrisprLink(loadedData);
+            } else {
+                console.error("Dữ liệu gen chưa được tải hoặc không hợp lệ để tạo liên kết CRISPR.");
+            }
+        }
+        // ====================================================================
 
 
         // Hàm lấy màu dựa trên loại feature
@@ -252,7 +292,6 @@
         window.downloadFile = function (format) {
             const fileName = `${contigId}.${format}`;
             console.log(`Tính năng Tải xuống file ${fileName} đang được phát triển...`);
-            // Thêm logic fetch API để tải file thực tế
             
             // Ví dụ tạo blob và tải xuống (Chỉ dành cho demo, cần logic API thực tế)
             const mockContent = format === 'fasta' ? 
@@ -288,7 +327,6 @@
             }
 
             // 2. Tìm kiếm tất cả các cặp số [start:end]
-            // Chú ý: Match chỉ tìm kiếm cặp số, không quan tâm ký tự ^ (chưa biết) hoặc < (lớn hơn/nhỏ hơn)
             const coordinateMatches = [...locationString.matchAll(/(\d+):(\d+)/g)];
 
             if (coordinateMatches.length > 0) {
@@ -303,7 +341,7 @@
                 // Vị trí kết thúc tổng thể là max của tất cả các tọa độ
                 end = Math.max(...allCoords);
             } else {
-                // Xử lý trường hợp chỉ có một tọa độ đơn (ví dụ: source 1:5000)
+                // Xử lý trường hợp chỉ có một tọa độ đơn (ví dụ: source 1..5000)
                 const singleMatch = locationString.match(/(\d+)\.\.(\d+)/);
                 if (singleMatch) {
                     start = parseInt(singleMatch[1]);
@@ -388,7 +426,7 @@
                     d3.select(this).attr("stroke", "black").attr("stroke-width", 2);
                     tooltip.html(`
                         <strong>Loại:</strong> ${d.type}<br>
-                        <strong>ID:</strong> ${d.qualifiers?.gene?.[0] || 'N/A'}<br>
+                        <strong>ID:</strong> ${d.qualifiers?.gene?.[0] || d.description || 'N/A'}<br>
                         <strong>Vị trí:</strong> ${d.start_coord ? d.start_coord.toLocaleString() : 'N/A'} - ${d.end_coord ? d.end_coord.toLocaleString() : 'N/A'} (Locus: ${d.location})<br>
                         <strong>Sợi:</strong> ${d.strand || 'Không xác định'}<br>
                         <strong>Chú giải:</strong> ${d.description || 'Không có'}
@@ -450,26 +488,25 @@
                     throw new Error(data.error || 'Không tìm thấy dữ liệu contig.');
                 }
 
-                // Lưu dữ liệu đã tải
+                // Lưu dữ liệu đã tải VÀ GÁN species TỪ PARAMS VÀO DATA
                 loadedData = data;
+                loadedData.species = species; // Đảm bảo loadedData có trường species cho hàm tạo link
 
                 // Xử lý dữ liệu features để trích xuất start, end, strand cho Visualization và Bảng
                 if (loadedData.features) {
                     loadedData.features = loadedData.features.map(feature => {
-                        const { start, end, strand } = parseLocation(feature.location);
+                        const locationString = feature.location || `${feature.location_start}..${feature.location_end}`; 
+                        const { start, end, strand } = parseLocation(locationString);
 
-                        // Trích xuất thông tin mô tả chi tiết từ qualifiers
-                        const qualifiers = feature.qualifiers || {};
-                        const product = qualifiers.product ? qualifiers.product[0] : '';
-                        const gene = qualifiers.gene ? qualifiers.gene[0] : '';
-                        const description = product || gene || qualifiers.note?.[0] || 'N/A';
+                        const feature_description = feature.product || feature.gene || feature.locus_tag || 'N/A';
 
                         return {
                             ...feature,
-                            start_coord: start, // Dùng cho Visualization
-                            end_coord: end,     // Dùng cho Visualization
-                            strand: strand,     // Dùng cho Visualization
-                            description: description // Dùng cho Bảng và Tooltip
+                            location: locationString,
+                            start_coord: start, 
+                            end_coord: end,     
+                            strand: strand,     
+                            description: feature_description
                         };
                     });
                     // Sau khi xử lý, ta lọc ra các feature có tọa độ hợp lệ cho Visualization
@@ -485,16 +522,15 @@
                 document.getElementById('gene-features-count').textContent = data.features ? data.features.length.toLocaleString() : '0';
 
                 // Cập nhật trình tự
-                document.getElementById('nucleotide-sequence').textContent = formatSequence(data.sequence);
+                document.getElementById('nucleotide-sequence').textContent = formatSequence(data.sequence || "Lỗi: Trình tự chưa được tải từ API.");
 
                 // Cập nhật bảng features 
                 const featuresBody = document.getElementById('features-body');
                 featuresBody.innerHTML = '';
 
-                if (data.features && data.features.length > 0) {
-                    data.features.forEach(feature => {
+                if (loadedData.features && loadedData.features.length > 0) {
+                    loadedData.features.forEach(feature => {
                         const row = featuresBody.insertRow();
-                        // Sử dụng thông tin description đã được xử lý trong map ở trên
                         row.innerHTML = `
                             <td class="px-2 py-2 whitespace-nowrap text-sm text-gray-900 font-mono w-[15%]">${feature.type || 'N/A'}</td>
                             <td class="px-2 py-2 text-xs text-gray-500 w-[25%] font-mono break-words">${feature.location || '?'}</td>
@@ -529,8 +565,18 @@
 
         window.onload = function() {
             loadGeneData();
-            // Gắn sự kiện click cho nút JBrowse sau khi DOM đã tải
-            document.getElementById('jbrowse-button').onclick = handleJBrowseClick;
+            
+            // Gắn sự kiện click cho nút JBrowse
+            const jbrowseButton = document.getElementById('jbrowse-button');
+            if (jbrowseButton) {
+                jbrowseButton.onclick = handleJBrowseClick;
+            }
+
+            // GẮN SỰ KIỆN CLICK CHO NÚT CRISPR
+            const crisprButton = document.getElementById('crispr-button');
+            if (crisprButton) {
+                crisprButton.onclick = handleCrisprClick;
+            }
         };
 
         window.onresize = () => {

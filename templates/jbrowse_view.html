@@ -1,189 +1,201 @@
 <!DOCTYPE html>
 <html lang="vi">
-
-<head>
-           
-       
-    <meta charset="UTF-8">
-           
-       
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Trực quan hóa Gen JBrowse</title>
-            <!-- Tải Tailwind CSS CDN -->
-           
-       
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Trực quan hóa Gen JBrowse</title>
+    <!-- Tải Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-            <style>
-        :root {
-            font-family: 'Inter', sans-serif;
-        }
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
 
-        /* Đảm bảo iframe chiếm toàn bộ không gian của container */
-        #jbrowse-container {
-            width: 100%;
-            height: 80vh;
-            min-height: 600px;
-        }
+    <style>
+      :root {
+        font-family: "Inter", sans-serif;
+      }
+
+      /* Đảm bảo body và main không có padding/margin giới hạn chiều rộng */
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      
+      /* Đảm bảo iframe chiếm toàn bộ không gian của container */
+      #jbrowse-container {
+        width: 100%;
+        /* Tăng chiều cao để chiếm gần hết không gian hiển thị */
+        height: 90vh; 
+        min-height: 700px;
+      }
     </style>
-</head>
+  </head>
 
-<body class="bg-gray-50 min-h-screen">
+  <body class="bg-gray-50 min-h-screen">
+    <!-- Header đã được tối ưu hóa để hiển thị thông tin chính -->
+    <header class="bg-teal-700 text-white p-4 shadow-xl sticky top-0 z-20">
+      <div class="flex flex-col md:flex-row md:items-center justify-between max-w-7xl mx-auto">
+        <h1 class="text-2xl font-extrabold">Trực quan hóa gen với JBrowse</h1>
+        <p id="header-location" class="text-sm opacity-90 mt-1 md:mt-0"></p>
+      </div>
+    </header>
 
-            <header class="bg-teal-600 text-white p-4 shadow-lg sticky top-0 z-10">
-                        <h1 class="text-2xl font-bold">Trực quan hóa Gen Cao Lương (JBrowse)</h1>
-                    </header>
-           
-            <main id="app-main" class="p-6 max-w-7xl mx-auto">
-                        <!-- Nội dung sẽ được chèn bởi JavaScript -->
-                    </main>
+    <!-- MAIN: Loại bỏ giới hạn chiều rộng -->
+    <main id="app-main" class="p-4 md:p-6 w-full">
+      <!-- Nội dung sẽ được chèn bởi JavaScript -->
+    </main>
 
-           
-       
     <script>
-        // Cố định đường dẫn JBrowse 2
-        const JBROWSE_BASE_URL = "https://jbrowse.org/code/jb2/main/index.html";
-        const JBROWSE_GENOME_NAME = "Sorghum_bicolor_v3";
+      // Cố định đường dẫn JBrowse 2
+      const JBROWSE_BASE_URL = "https://jbrowse.org/code/jb2/main/index.html";
+      const JBROWSE_GENOME_NAME = "Sorghum_bicolor_v3";
 
-        // Cấu hình JBrowse 2 tĩnh cho Sorghum bicolor v3 (Sbi_v3)
-        // Sử dụng các tài nguyên công khai ổn định của Sbi_v3
-        const staticConfig = {
-            "assemblies": [
-                {
-                    "name": JBROWSE_GENOME_NAME,
-                    "sequence": {
-                        "type": "ReferenceSequence",
-                        // Sử dụng tệp FASTA công khai ổn định từ JBrowse/gmod
-                        "adapter": {
-                            "type": "IndexedFastaAdapter",
-                            "fastaLocation": {
-                                "uri": "https://gmod.github.io/jbrowse-registry/data/sbicolor/sorghum_bicolor_v3.0.1.fa.gz"
-                            },
-                            "faiLocation": {
-                                "uri": "https://gmod.github.io/jbrowse-registry/data/sbicolor/sorghum_bicolor_v3.0.1.fa.gz.fai"
-                            }
-                        }
-                    }
-                }
-            ],
-            "tracks": [
-                {
-                    "type": "FeatureTrack",
-                    "trackId": "Sorghum_Genes",
-                    "name": "Gen Sorghum bicolor (Sbi_v3)",
-                    "assemblyNames": [JBROWSE_GENOME_NAME],
-                    "adapter": {
-                        "type": "Gff3TabixAdapter",
-                        "gffGzLocation": {
-                            "uri": "https://gmod.github.io/jbrowse-registry/data/sbicolor/Sorghum_bicolor_v3.0.1.gff3.gz"
-                        },
-                        "index": {
-                            "location": {
-                                "uri": "https://gmod.github.io/jbrowse-registry/data/sbicolor/Sorghum_bicolor_v3.0.1.gff3.gz.tbi"
-                            },
-                            "indexType": "TBI"
-                        }
-                    }
-                }
-            ],
-            "defaultSession": {
-                "views": [
-                    {
-                        "type": "LinearGenomeView",
-                        "tracks": [{ "trackId": "Sorghum_Genes" }]
-                    }
-                ]
-            }
-        };
+      // Cấu hình JBrowse 2 tĩnh cho Sorghum bicolor v3 (Sbi_v3)
+      const staticConfig = {
+        assemblies: [
+          {
+            name: JBROWSE_GENOME_NAME,
+            sequence: {
+              type: "ReferenceSequence",
+              // Sử dụng tệp FASTA công khai ổn định từ JBrowse/gmod
+              adapter: {
+                type: "IndexedFastaAdapter",
+                fastaLocation: {
+                  uri: "https://gmod.github.io/jbrowse-registry/data/sbicolor/sorghum_bicolor_v3.0.1.fa.gz",
+                },
+                faiLocation: {
+                  uri: "https://gmod.github.io/jbrowse-registry/data/sbicolor/sorghum_bicolor_v3.0.1.fa.gz.fai",
+                },
+              },
+            },
+          },
+        ],
+        tracks: [
+          {
+            type: "FeatureTrack",
+            trackId: "Sorghum_Genes",
+            name: "Gen Sorghum bicolor (Sbi_v3)",
+            assemblyNames: [JBROWSE_GENOME_NAME],
+            adapter: {
+              type: "Gff3TabixAdapter",
+              gffGzLocation: {
+                uri: "https://gmod.github.io/jbrowse-registry/data/sbicolor/Sorghum_bicolor_v3.0.1.gff3.gz",
+              },
+              index: {
+                location: {
+                  uri: "https://gmod.github.io/jbrowse-registry/data/sbicolor/Sorghum_bicolor_v3.0.1.gff3.gz.tbi",
+                },
+                indexType: "TBI",
+              },
+            },
+          },
+        ],
+        defaultSession: {
+          views: [
+            {
+              type: "LinearGenomeView",
+              tracks: [{ trackId: "Sorghum_Genes" }],
+            },
+          ],
+        },
+      };
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const params = new URLSearchParams(window.location.search);
-            const chrom_query = params.get('chrom');
-            const start = params.get('start');
-            const end = params.get('end');
-            const name = params.get('name') || 'Gen Đã Chọn';
+      document.addEventListener("DOMContentLoaded", () => {
+        const params = new URLSearchParams(window.location.search);
+        const chrom_query = params.get("chrom");
+        const start = params.get("start");
+        const end = params.get("end");
+        const name = params.get("name") || "Gen Đã Chọn";
 
-            const appMain = document.getElementById('app-main');
+        const appMain = document.getElementById("app-main");
+        const headerLocation = document.getElementById("header-location");
 
-            if (chrom_query && start && end) {
+        if (chrom_query && start && end) {
+          let chrom_display = chrom_query;
 
-                let chrom_display = chrom_query;
+          // Ánh xạ ID NCBI sang tên chromosome JBrowse (Sbi_v3)
+          const ncMap = {
+            "NC_012866.2": "Chr1",
+            "NC_012867.2": "Chr2",
+            "NC_012868.2": "Chr3",
+            "NC_012869.2": "Chr4",
+            "NC_012870.2": "Chr5",
+            "NC_012871.2": "Chr6",
+            "NC_012872.2": "Chr7",
+            "NC_012873.2": "Chr8",
+            "NC_012874.2": "Chr9",
+            "NC_012875.2": "Chr10", // Chính là ID của bạn
+          };
+          if (chrom_query.startsWith("NC_")) {
+            chrom_display = ncMap[chrom_query] || chrom_query;
+          }
 
-                // Ánh xạ ID NCBI sang tên chromosome JBrowse (Sbi_v3)
-                const ncMap = {
-                    "NC_012866.2": "Chr1",
-                    "NC_012867.2": "Chr2",
-                    "NC_012868.2": "Chr3",
-                    "NC_012869.2": "Chr4",
-                    "NC_012870.2": "Chr5",
-                    "NC_012871.2": "Chr6",
-                    "NC_012872.2": "Chr7",
-                    "NC_012873.2": "Chr8",
-                    "NC_012874.2": "Chr9",
-                    "NC_012875.2": "Chr10" // Chính là ID của bạn
-                };
-                if (chrom_query.startsWith("NC_")) {
-                    chrom_display = ncMap[chrom_query] || chrom_query;
-                }
+          // Vị trí (location) được sử dụng để tải JBrowse
+          const location = `${chrom_display}:${start}..${end}`;
 
+          // 1. Mã hóa cấu hình JBrowse tĩnh thành chuỗi URL-safe
+          const encodedConfig = encodeURIComponent(
+            JSON.stringify(staticConfig)
+          );
 
-                // Vị trí (location) được sử dụng để tải JBrowse
-                const location = `${chrom_display}:${start}..${end}`;
+          // Chuyển config từ query parameter (?) sang hash fragment (#)
+          const hashParams = `config=${encodedConfig}&loc=${location}&assembly=${JBROWSE_GENOME_NAME}`;
 
-                // 1. Mã hóa cấu hình JBrowse tĩnh thành chuỗi URL-safe
-                const encodedConfig = encodeURIComponent(JSON.stringify(staticConfig));
+          // 2. Tạo liên kết JBrowse 2 sử dụng cấu hình tĩnh được mã hóa
+          const jbrowseLink = `${JBROWSE_BASE_URL}#${hashParams}`;
 
-                // *** SỬA LỖI 404 ***
-                // Chuyển config từ query parameter (?) sang hash fragment (#) để ngăn JBrowse
-                // cố gắng fetch chuỗi JSON đã mã hóa như một đường dẫn file.
-                const hashParams = `config=${encodedConfig}&loc=${location}&assembly=${JBROWSE_GENOME_NAME}`;
+          // Cập nhật thông tin vị trí lên header
+          headerLocation.innerHTML = `Đang xem: **${name}** | Vị trí: **${chrom_display}:${parseInt(start).toLocaleString()}-${parseInt(end).toLocaleString()}**`;
 
-                // 2. Tạo liên kết JBrowse 2 sử dụng cấu hình tĩnh được mã hóa
-                // Tham số được truyền sau dấu #
-                const jbrowseLink = `${JBROWSE_BASE_URL}#${hashParams}`;
+          // Tạo đường dẫn Quay lại chi tiết gen, truyền lại species và contig_id (chrom_query)
+          const geneDetailReturnLink = `/gene_view?species=S_bicolor&contig_id=${chrom_query}`;
 
-                appMain.innerHTML = `
-                    <a href="/gene_view" class="mb-6 text-teal-600 hover:text-teal-800 transition-colors flex items-center font-medium">
-                        <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-                        Quay lại chi tiết gen
-                    </a>
+          appMain.innerHTML = `
+ <div class="max-w-7xl mx-auto">
+    <!-- ĐÃ SỬA: Thêm tham số species và contig_id vào liên kết quay lại -->
+    <a href="${geneDetailReturnLink}" class="mb-4 text-teal-600 hover:text-teal-800 transition-colors flex items-center font-medium">
+        <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Quay lại chi tiết gen
+    </a>
 
-                    <h2 class="text-4xl font-extrabold text-lime-700 mb-4">
-                        Xem Gen: ${name}
-                    </h2>
-                    
-                    <div class="bg-gray-100 border border-gray-300 p-3 rounded-lg mb-4 text-sm">
-                        <p class="font-bold text-gray-700">Vị trí (ID Gốc):</p>
-                        <p class="font-mono text-xs break-all">${chrom_query}:${parseInt(start).toLocaleString()} - ${parseInt(end).toLocaleString()}</p>
-                        <p class="mt-1 font-bold text-gray-700">Tải bộ gen:</p>
-                        <p class="font-mono text-xs break-all">Sorghum bicolor v3 (Tọa độ được ánh xạ thành: **${chrom_display}**)</p>
-                    </div>
+    <h2 class="text-4xl font-extrabold text-lime-700 mb-4">
+        Xem Gen: ${name}
+    </h2>
+ 
+    <div class="bg-gray-100 border border-gray-300 p-3 rounded-lg mb-4 text-sm">
+        <p class="font-bold text-gray-700">ID Gốc:</p>
+        <p class="font-mono text-xs break-all">${chrom_query}</p>
+        <p class="mt-1 font-bold text-gray-700">Bộ gen đang tải:</p>
+        <p class="font-mono text-xs break-all">Sorghum bicolor v3 (Tọa độ được ánh xạ thành: **${chrom_display}**)</p>
+    </div>
+ </div>
 
-                    <!-- Khối nhúng JBrowse bằng iFrame -->
-                    <div id="jbrowse-container" class="relative overflow-hidden rounded-xl shadow-2xl">
-                        <iframe 
-                            src="${jbrowseLink}" 
-                            width="100%" 
-                            height="100%" 
-                            frameborder="0" 
-                            allowfullscreen
-                            title="JBrowse Genome Browser for ${name}"
-                            class="border-4 border-lime-600 rounded-xl"
-                        ></iframe>
-                    </div>
-                `;
-            } else {
-                appMain.innerHTML = `
-                    <div class="mt-10 p-5 bg-red-100 border border-red-400 text-red-700 rounded-lg">
-                        Không tìm thấy tọa độ gen để trực quan hóa.
-                    </div>
-                    <a href="/gene_view" class="mt-4 inline-flex items-center text-teal-600 hover:text-teal-800">
-                        <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-                        Quay lại trang chi tiết gen
-                    </a>
-                `;
-            }
-        });
+ <!-- Khối nhúng JBrowse bằng iFrame (chiếm toàn bộ chiều rộng) -->
+ <div id="jbrowse-container" class="relative overflow-hidden">
+    <iframe 
+        src="${jbrowseLink}" 
+        width="100%" 
+        height="100%" 
+        frameborder="0" 
+        allowfullscreen
+        title="JBrowse Genome Browser for ${name}"
+        class="border-4 border-lime-600 rounded-xl"
+    ></iframe>
+ </div>
+ `;
+        } else {
+          // Khi không có tham số
+          appMain.innerHTML = `
+ <div class="max-w-7xl mx-auto">
+    <div class="mt-10 p-5 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+    Không tìm thấy tọa độ gen để trực quan hóa. Vui lòng quay lại trang chi tiết gen.
+    </div>
+    <a href="/gene_view" class="mt-4 inline-flex items-center text-teal-600 hover:text-teal-800">
+        <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Quay lại trang chi tiết gen
+    </a>
+ </div>
+ `;
+        }
+      });
     </script>
-</body>
-
+  </body>
 </html>
