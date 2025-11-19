@@ -1,598 +1,773 @@
 <!DOCTYPE html>
 <html lang="vi">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Chi tiết Gen và Trực quan hóa</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://d3js.org/d3.v7.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f8f9fa;
-        }
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #f8f9fa;
+      }
 
-        .card {
-            background-color: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            padding: 1.5rem;
-        }
+      .card {
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        padding: 1.5rem;
+      }
 
-        .feature-bar {
-            height: 10px;
-            background-color: #4a5568;
-            border-radius: 2px;
-        }
+      .feature-bar {
+        height: 10px;
+        background-color: #4a5568;
+        border-radius: 2px;
+      }
 
-        .visualization-area {
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            background-color: #fff;
-            padding: 1rem;
-        }
+      .visualization-area {
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        background-color: #fff;
+        padding: 1rem;
+      }
 
-        .sequence-display {
-            font-family: monospace;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            font-size: 0.8rem;
-            line-height: 1.5;
-            background-color: #f7fafc;
-            border: 1px solid #e2e8f0;
-            padding: 1rem;
-            border-radius: 6px;
-            max-height: 400px;
-            overflow-y: auto;
-        }
+      .sequence-display {
+        font-family: monospace;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        font-size: 0.8rem;
+        line-height: 1.5;
+        background-color: #f7fafc;
+        border: 1px solid #e2e8f0;
+        padding: 1rem;
+        border-radius: 6px;
+        max-height: 400px;
+        overflow-y: auto;
+      }
 
-        /* D3/SVG Styles */
-        .contig-line {
-            stroke: #4a5568;
-            stroke-width: 2px;
-        }
+      /* D3/SVG Styles */
+      .contig-line {
+        stroke: #4a5568;
+        stroke-width: 2px;
+      }
 
-        .feature-rect {
-            opacity: 0.8;
-            cursor: pointer;
-            transition: opacity 0.2s;
-        }
+      .feature-rect {
+        opacity: 0.8;
+        cursor: pointer;
+        transition: opacity 0.2s;
+      }
 
-        .feature-rect:hover {
-            opacity: 1;
-        }
+      .feature-rect:hover {
+        opacity: 1;
+      }
 
-        .tooltip {
-            position: absolute;
-            text-align: left;
-            padding: 8px;
-            font-size: 12px;
-            background: #333;
-            color: white;
-            border: 0px;
-            border-radius: 4px;
-            pointer-events: none;
-            z-index: 100;
-        }
+      .tooltip {
+        position: absolute;
+        text-align: left;
+        padding: 8px;
+        font-size: 12px;
+        background: #333;
+        color: white;
+        border: 0px;
+        border-radius: 4px;
+        pointer-events: none;
+        z-index: 100;
+      }
     </style>
-</head>
+  </head>
 
-<body class="p-4 md:p-8">
+  <body class="p-4 md:p-8">
     <div class="max-w-7xl mx-auto space-y-8">
-        <!-- Header -->
-        <header>
-            <h1 class="text-4xl font-extrabold text-gray-900 mb-1" id="page-title">Chi tiết Gen</h1>
-            <p class="text-gray-600 mb-4">Thông tin chú giải và trực quan hóa các đặc trưng trên Contig ID: <span
-                    id="contig-id" class="font-mono font-semibold text-teal-600">...</span></p>
-            <a href="/" class="text-blue-600 hover:text-blue-800 font-medium transition duration-150">← Quay lại Trang
-                Chủ</a>
-        </header>
+      <!-- Header -->
+      <header>
+        <h1 class="text-4xl font-extrabold text-gray-900 mb-1" id="page-title">
+          Chi tiết Gen
+        </h1>
+        <p class="text-gray-600 mb-4">
+          Thông tin chú giải và trực quan hóa các đặc trưng trên Contig ID:
+          <span id="contig-id" class="font-mono font-semibold text-teal-600"
+            >...</span
+          >
+        </p>
+        <a
+          href="/"
+          class="text-blue-600 hover:text-blue-800 font-medium transition duration-150"
+          >← Quay lại Trang Chủ</a
+        >
+      </header>
 
-        <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Left Column: Summary and Visualization -->
-            <div class="lg:col-span-2 space-y-6">
-                <!-- Data Summary -->
-                <div class="card space-y-4">
-                    <h2 class="text-2xl font-bold text-gray-800">Thông tin Tóm tắt</h2>
-                    <p class="text-lg font-semibold text-gray-900" id="gene-description"></p>
-                    <div class="grid grid-cols-2 gap-4 text-sm">
-                        <p class="text-gray-600">Loài: <span id="gene-species" class="font-medium text-gray-800"></span>
-                        </p>
-                        <p class="text-gray-600">Contig ID: <span id="gene-contig"
-                                class="font-medium text-gray-800 font-mono"></span></p>
-                        <p class="text-gray-600">Độ dài: <span id="gene-length"
-                                class="font-medium text-gray-800"></span> bp</p>
-                        <p class="text-gray-600">Số lượng Đặc trưng: <span id="gene-features-count"
-                                class="font-medium text-gray-800"></span></p>
-                    </div>
-                </div>
-
-                <!-- Visualization Area -->
-                <div class="card">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Trực quan hóa Đặc trưng</h2>
-                    <div class="visualization-area" id="visualization-container">
-                        <svg id="genome-visualization" width="100%" height="200"></svg>
-                    </div>
-                </div>
-
-                <!-- Sequence Display -->
-                <div class="card">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Trình tự Nucleotide</h2>
-                    <div class="sequence-display" id="nucleotide-sequence">Đang tải trình tự...</div>
-                </div>
+      <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Left Column: Summary and Visualization -->
+        <div class="lg:col-span-2 space-y-6">
+          <!-- Data Summary -->
+          <div class="card space-y-4">
+            <h2 class="text-2xl font-bold text-gray-800">Thông tin Tóm tắt</h2>
+            <p
+              class="text-lg font-semibold text-gray-900"
+              id="gene-description"
+            ></p>
+            <div class="grid grid-cols-2 gap-4 text-sm">
+              <p class="text-gray-600">
+                Loài:
+                <span
+                  id="gene-species"
+                  class="font-medium text-gray-800"
+                ></span>
+              </p>
+              <p class="text-gray-600">
+                Contig ID:
+                <span
+                  id="gene-contig"
+                  class="font-medium text-gray-800 font-mono"
+                ></span>
+              </p>
+              <p class="text-gray-600">
+                Độ dài:
+                <span id="gene-length" class="font-medium text-gray-800"></span>
+                bp
+              </p>
+              <p class="text-gray-600">
+                Số lượng Đặc trưng:
+                <span
+                  id="gene-features-count"
+                  class="font-medium text-gray-800"
+                ></span>
+              </p>
             </div>
+          </div>
 
-            <!-- Right Column: Features Table and Download -->
-            <div class="lg:col-span-1 space-y-6">
-                <!-- Download Section -->
-                <div class="card space-y-3">
-                    <h2 class="text-xl font-bold text-gray-800">Tải Dữ liệu</h2>
-                    <button
-                        class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 shadow-md"
-                        onclick="downloadFile('fasta')">
-                        Tải FASTA
-                    </button>
-                    <button
-                        class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 shadow-md"
-                        onclick="downloadFile('gff3')">
-                        Tải GFF3
-                    </button>
-                </div>
-
-                <!-- Công cụ Phân tích Gen -->
-                <div class="card space-y-3">
-                    <h2 class="text-xl font-bold text-gray-800">Công cụ Phân tích Gen</h2>
-                    <!-- ĐÃ THAY THẾ: Nút CRISPR Designer thành Button và gán ID để xử lý động -->
-                    <button id="crispr-button"
-                        class="w-full flex items-center justify-center bg-teal-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-teal-700 transition duration-150 shadow-md">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                        Thiết Kế CRISPR Tefor
-                    </button>
-                    <!-- Nút JBrowse (Giữ nguyên ID để JS handler hoạt động) -->
-                    <button id="jbrowse-button"
-                        class="w-full flex items-center justify-center bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition duration-150 shadow-md">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                        Xem Trực quan JBrowse
-                    </button>
-                </div>
-
-                <!-- Features Table -->
-                <div class="card space-y-3">
-                    <h2 class="text-xl font-bold text-gray-800 mb-3">Bảng Đặc trưng (Features)</h2>
-                    <div class="overflow-y-auto max-h-96">
-                        <table class="min-w-full divide-y divide-gray-200" id="features-table">
-                            <thead class="bg-gray-50 sticky top-0">
-                                <tr>
-                                    <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Loại
-                                    </th>
-                                    <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Vị trí
-                                    </th>
-                                    <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Mô tả
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-200" id="features-body">
-                                <!-- Feature rows will be injected here -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+          <!-- Visualization Area -->
+          <div class="card">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">
+              Trực quan hóa Đặc trưng
+            </h2>
+            <div class="visualization-area" id="visualization-container">
+              <svg id="genome-visualization" width="100%" height="200"></svg>
             </div>
-        </main>
+          </div>
+
+          <!-- Sequence Display -->
+          <div class="card">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">
+              Trình tự Nucleotide
+            </h2>
+            <div class="sequence-display" id="nucleotide-sequence">
+              Đang tải trình tự...
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Features Table and Download -->
+        <div class="lg:col-span-1 space-y-6">
+          <!-- Download Section -->
+          <div class="card space-y-3">
+            <h2 class="text-xl font-bold text-gray-800">Tải Dữ liệu</h2>
+            <button
+              class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 shadow-md"
+              onclick="downloadFile('fasta')"
+            >
+              Tải FASTA
+            </button>
+            <button
+              class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 shadow-md"
+              onclick="downloadFile('gff3')"
+            >
+              Tải GFF3
+            </button>
+          </div>
+
+          <!-- Công cụ Phân tích Gen -->
+          <div class="card space-y-3">
+            <h2 class="text-xl font-bold text-gray-800">
+              Công cụ Phân tích Gen
+            </h2>
+            <!-- ĐÃ THAY THẾ: Nút CRISPR Designer thành Button và gán ID để xử lý động -->
+            <button
+              id="crispr-button"
+              class="w-full flex items-center justify-center bg-teal-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-teal-700 transition duration-150 shadow-md"
+            >
+              <svg
+                class="w-5 h-5 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 10V3L4 14h7v7l9-11h-7z"
+                ></path>
+              </svg>
+              Thiết Kế CRISPR Tefor
+            </button>
+            <!-- Nút JBrowse (Giữ nguyên ID để JS handler hoạt động) -->
+            <button
+              id="jbrowse-button"
+              class="w-full flex items-center justify-center bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition duration-150 shadow-md"
+            >
+              <svg
+                class="w-5 h-5 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                ></path>
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                ></path>
+              </svg>
+              Xem Trực quan JBrowse
+            </button>
+          </div>
+
+          <!-- Features Table -->
+          <div class="card space-y-3">
+            <h2 class="text-xl font-bold text-gray-800 mb-3">Bảng đặc trưng</h2>
+            <div class="overflow-y-auto max-h-96">
+              <table
+                class="min-w-full divide-y divide-gray-200"
+                id="features-table"
+              >
+                <thead class="bg-gray-50 sticky top-0">
+                  <tr>
+                    <th
+                      class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase"
+                    >
+                      Loại
+                    </th>
+                    <th
+                      class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase"
+                    >
+                      Vị trí
+                    </th>
+                    <th
+                      class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase"
+                    >
+                      Mô tả
+                    </th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200" id="features-body">
+                  <!-- Feature rows will be injected here -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </main>
     </div>
 
     <div id="tooltip" class="tooltip hidden"></div>
 
     <script>
-        const params = new URLSearchParams(window.location.search);
-        const species = params.get('species');
-        const contigId = params.get('contig_id');
-        const BASE_API_URL = '/api/gene_search';
+      const params = new URLSearchParams(window.location.search);
+      const species = params.get("species");
+      const contigId = params.get("contig_id");
+      const BASE_API_URL = "/api/gene_search";
 
-        // Biến toàn cục để lưu trữ dữ liệu đã tải, phục vụ cho việc redraw khi resize và tạo link JBrowse/CRISPR
-        let loadedData = null;
+      // Biến toàn cục để lưu trữ dữ liệu đã tải, phục vụ cho việc redraw khi resize và tạo link JBrowse/CRISPR
+      let loadedData = null;
 
-        // ====================================================================
-        // HÀM TẠO LIÊN KẾT ĐỘNG
-        // ====================================================================
+      // ====================================================================
+      // HÀM TẠO LIÊN KẾT ĐỘNG
+      // ====================================================================
 
-        // Hàm tạo link JBrowse
-        function createJBrowseLink(data) {
-            if (!data || !data.contig_id || !data.sequence_length) {
-                console.error("Dữ liệu không đủ để tạo liên kết JBrowse.");
-                return '#';
-            }
-
-            const contigId = data.contig_id;
-            const length = data.sequence_length;
-            
-            const params = new URLSearchParams({
-                chrom: contigId,
-                start: 1, 
-                end: length, 
-                name: contigId
-            }).toString();
-
-            return `/jbrowse_view?${params}`;
+      // Hàm tạo link JBrowse
+      function createJBrowseLink(data) {
+        if (!data || !data.contig_id || !data.sequence_length) {
+          console.error("Dữ liệu không đủ để tạo liên kết JBrowse.");
+          return "#";
         }
 
-        // Handler cho nút JBrowse
-        function handleJBrowseClick() {
-            if (loadedData && loadedData.contig_id && loadedData.sequence_length) {
-                window.location.href = createJBrowseLink(loadedData);
-            } else {
-                console.error("Dữ liệu gen chưa được tải hoặc không hợp lệ để tạo liên kết JBrowse.");
-            }
+        const contigId = data.contig_id;
+        const length = data.sequence_length;
+
+        const params = new URLSearchParams({
+          chrom: contigId,
+          start: 1,
+          end: length,
+          name: contigId,
+        }).toString();
+
+        return `/jbrowse_view?${params}`;
+      }
+
+      // Handler cho nút JBrowse
+      function handleJBrowseClick() {
+        if (loadedData && loadedData.contig_id && loadedData.sequence_length) {
+          window.location.href = createJBrowseLink(loadedData);
+        } else {
+          console.error(
+            "Dữ liệu gen chưa được tải hoặc không hợp lệ để tạo liên kết JBrowse."
+          );
+        }
+      }
+
+      // HÀM MỚI: Tạo link CRISPR (Chỉ truyền species và contig_id)
+      function createCrisprLink(data) {
+        if (!data || !data.species || !data.contig_id) {
+          console.error("Dữ liệu không đủ để tạo liên kết CRISPR.");
+          return "#";
         }
 
-        // HÀM MỚI: Tạo link CRISPR (Chỉ truyền species và contig_id)
-        function createCrisprLink(data) {
-            if (!data || !data.species || !data.contig_id) {
-                console.error("Dữ liệu không đủ để tạo liên kết CRISPR.");
-                return '#'; 
-            }
-            
-            const params = new URLSearchParams({
-                species: data.species,
-                contig_id: data.contig_id
-            }).toString();
+        const params = new URLSearchParams({
+          species: data.species,
+          contig_id: data.contig_id,
+        }).toString();
 
-            return `/crispr_designer?${params}`;
+        return `/crispr_designer?${params}`;
+      }
+
+      // HÀM MỚI: Handler cho nút CRISPR
+      function handleCrisprClick() {
+        // Đảm bảo dữ liệu cơ bản đã được tải (loadedData có tồn tại)
+        if (loadedData) {
+          // Thêm trường 'species' vào loadedData nếu nó không có sẵn từ API (nhưng nó có từ params)
+          loadedData.species = loadedData.species || species;
+
+          window.location.href = createCrisprLink(loadedData);
+        } else {
+          console.error(
+            "Dữ liệu gen chưa được tải hoặc không hợp lệ để tạo liên kết CRISPR."
+          );
+        }
+      }
+      // ====================================================================
+
+      // Hàm lấy màu dựa trên loại feature
+      function getFeatureColor(type) {
+        switch (type.toLowerCase()) {
+          case "cds":
+            return "#d63031"; // Red
+          case "trna":
+            return "#0984e3"; // Blue
+          case "rrna":
+            return "#6c5ce7"; // Purple
+          case "gene":
+            return "#00b894"; // Green
+          case "exon":
+            return "#ff7675"; // Light Red
+          default:
+            return "#fdcb6e"; // Yellow/Other
+        }
+      }
+
+      // Hàm format trình tự thành từng block 60 ký tự
+      function formatSequence(sequence) {
+        if (!sequence) return "Không có trình tự để hiển thị.";
+        const charsPerLine = 60;
+        let formatted = "";
+
+        // Chiều dài số dòng để căn lề cho số thứ tự
+        const sequenceLength = sequence.length;
+        const paddingLength = String(sequenceLength).length;
+
+        for (let i = 0; i < sequence.length; i += charsPerLine) {
+          let line = sequence.substring(i, i + charsPerLine);
+          // Thêm số thứ tự (1-based index) và căn lề bằng padStart
+          const lineNumber = String(i + 1).padStart(paddingLength, " ");
+          formatted += `${lineNumber}\t${line}\n`;
+        }
+        return formatted;
+      }
+
+      // Hàm Tải file (placeholder)
+      window.downloadFile = function (format) {
+        const fileName = `${contigId}.${format}`;
+        console.log(
+          `Tính năng Tải xuống file ${fileName} đang được phát triển...`
+        );
+
+        // Ví dụ tạo blob và tải xuống (Chỉ dành cho demo, cần logic API thực tế)
+        const mockContent =
+          format === "fasta"
+            ? `>${contigId}\n${loadedData?.sequence || "Sequence not loaded."}`
+            : `##gff-version 3\n# Contig: ${contigId}\n...`;
+        const blob = new Blob([mockContent], { type: "text/plain" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      };
+
+      /**
+       * Phân tích chuỗi vị trí GenBank (e.g., "[100:200](+)" hoặc "join{[...](-)}")
+       * để lấy vị trí bắt đầu, kết thúc tổng thể, và sợi (strand).
+       */
+      function parseLocation(locationString) {
+        let start = null;
+        let end = null;
+        let strand = "+";
+
+        if (!locationString) {
+          return { start: null, end: null, strand: "+" };
         }
 
-        // HÀM MỚI: Handler cho nút CRISPR
-        function handleCrisprClick() {
-            // Đảm bảo dữ liệu cơ bản đã được tải (loadedData có tồn tại)
-            if (loadedData) {
-                // Thêm trường 'species' vào loadedData nếu nó không có sẵn từ API (nhưng nó có từ params)
-                loadedData.species = loadedData.species || species;
-
-                window.location.href = createCrisprLink(loadedData);
-            } else {
-                console.error("Dữ liệu gen chưa được tải hoặc không hợp lệ để tạo liên kết CRISPR.");
-            }
-        }
-        // ====================================================================
-
-
-        // Hàm lấy màu dựa trên loại feature
-        function getFeatureColor(type) {
-            switch (type.toLowerCase()) {
-                case 'cds': return '#d63031'; // Red
-                case 'trna': return '#0984e3'; // Blue
-                case 'rrna': return '#6c5ce7'; // Purple
-                case 'gene': return '#00b894'; // Green
-                case 'exon': return '#ff7675'; // Light Red
-                default: return '#fdcb6e'; // Yellow/Other
-            }
+        // 1. Xác định Sợi (Strand)
+        if (
+          locationString.includes("(-)") ||
+          locationString.includes("complement(")
+        ) {
+          strand = "-";
+        } else {
+          strand = "+";
         }
 
-        // Hàm format trình tự thành từng block 60 ký tự
-        function formatSequence(sequence) {
-            if (!sequence) return 'Không có trình tự để hiển thị.'; 
-            const charsPerLine = 60;
-            let formatted = '';
+        // 2. Tìm kiếm tất cả các cặp số [start:end]
+        const coordinateMatches = [...locationString.matchAll(/(\d+):(\d+)/g)];
 
-            // Chiều dài số dòng để căn lề cho số thứ tự
-            const sequenceLength = sequence.length;
-            const paddingLength = String(sequenceLength).length;
+        if (coordinateMatches.length > 0) {
+          let allCoords = [];
+          coordinateMatches.forEach((match) => {
+            allCoords.push(parseInt(match[1])); // start
+            allCoords.push(parseInt(match[2])); // end
+          });
 
-            for (let i = 0; i < sequence.length; i += charsPerLine) {
-                let line = sequence.substring(i, i + charsPerLine);
-                // Thêm số thứ tự (1-based index) và căn lề bằng padStart
-                const lineNumber = String(i + 1).padStart(paddingLength, ' ');
-                formatted += `${lineNumber}\t${line}\n`;
-            }
-            return formatted;
+          // Vị trí bắt đầu tổng thể là min của tất cả các tọa độ
+          start = Math.min(...allCoords);
+          // Vị trí kết thúc tổng thể là max của tất cả các tọa độ
+          end = Math.max(...allCoords);
+        } else {
+          // Xử lý trường hợp chỉ có một tọa độ đơn (ví dụ: source 1..5000)
+          const singleMatch = locationString.match(/(\d+)\.\.(\d+)/);
+          if (singleMatch) {
+            start = parseInt(singleMatch[1]);
+            end = parseInt(singleMatch[2]);
+          }
         }
 
-        // Hàm Tải file (placeholder)
-        window.downloadFile = function (format) {
-            const fileName = `${contigId}.${format}`;
-            console.log(`Tính năng Tải xuống file ${fileName} đang được phát triển...`);
-            
-            // Ví dụ tạo blob và tải xuống (Chỉ dành cho demo, cần logic API thực tế)
-            const mockContent = format === 'fasta' ? 
-                                `>${contigId}\n${loadedData?.sequence || 'Sequence not loaded.'}` : 
-                                `##gff-version 3\n# Contig: ${contigId}\n...`;
-            const blob = new Blob([mockContent], { type: 'text/plain' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = fileName;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
+        return { start, end, strand };
+      }
 
-        /**
-         * Phân tích chuỗi vị trí GenBank (e.g., "[100:200](+)" hoặc "join{[...](-)}")
-         * để lấy vị trí bắt đầu, kết thúc tổng thể, và sợi (strand).
-         */
-        function parseLocation(locationString) {
-            let start = null;
-            let end = null;
-            let strand = '+';
+      // Hàm trực quan hóa D3
+      function visualizeFeatures(features, length) {
+        const svg = d3.select("#genome-visualization");
+        const container = d3.select("#visualization-container").node();
+        const margin = { top: 30, right: 30, bottom: 30, left: 30 };
 
-            if (!locationString) {
-                return { start: null, end: null, strand: '+' };
-            }
+        // Lấy chiều rộng hiện tại của container
+        const width =
+          container.getBoundingClientRect().width - margin.left - margin.right;
+        if (width <= 0) return; // Thoát nếu container chưa có kích thước
 
-            // 1. Xác định Sợi (Strand)
-            if (locationString.includes('(-)') || locationString.includes('complement(')) {
-                strand = '-';
-            } else {
-                strand = '+';
-            }
+        const minHeight = 150;
 
-            // 2. Tìm kiếm tất cả các cặp số [start:end]
-            const coordinateMatches = [...locationString.matchAll(/(\d+):(\d+)/g)];
+        // Cập nhật thuộc tính width và height cho SVG để đảm bảo nó phản hồi
+        svg.attr("width", container.getBoundingClientRect().width);
+        svg.attr("height", minHeight + margin.top + margin.bottom);
 
-            if (coordinateMatches.length > 0) {
-                let allCoords = [];
-                coordinateMatches.forEach(match => {
-                    allCoords.push(parseInt(match[1])); // start
-                    allCoords.push(parseInt(match[2])); // end
-                });
+        svg.selectAll("*").remove(); // Clear previous drawings
 
-                // Vị trí bắt đầu tổng thể là min của tất cả các tọa độ
-                start = Math.min(...allCoords);
-                // Vị trí kết thúc tổng thể là max của tất cả các tọa độ
-                end = Math.max(...allCoords);
-            } else {
-                // Xử lý trường hợp chỉ có một tọa độ đơn (ví dụ: source 1..5000)
-                const singleMatch = locationString.match(/(\d+)\.\.(\d+)/);
-                if (singleMatch) {
-                    start = parseInt(singleMatch[1]);
-                    end = parseInt(singleMatch[2]);
-                }
-            }
+        const g = svg
+          .append("g")
+          .attr("transform", `translate(${margin.left}, ${margin.top})`);
 
-            return { start, end, strand };
-        }
+        // 1. Scale
+        const safeLength =
+          length && !isNaN(length) && length > 0 ? length : 1000;
 
+        const xScale = d3
+          .scaleLinear()
+          .domain([1, safeLength])
+          .range([0, width]);
 
-        // Hàm trực quan hóa D3
-        function visualizeFeatures(features, length) {
-            const svg = d3.select("#genome-visualization");
-            const container = d3.select("#visualization-container").node();
-            const margin = { top: 30, right: 30, bottom: 30, left: 30 };
+        const validFeatures = features.filter((d) => d.start_coord !== null);
 
-            // Lấy chiều rộng hiện tại của container
-            const width = container.getBoundingClientRect().width - margin.left - margin.right;
-            if (width <= 0) return; // Thoát nếu container chưa có kích thước
+        const centerLineY = minHeight / 2; // Sử dụng chiều cao tối thiểu cho việc căn giữa
 
-            const minHeight = 150;
-            
-            // Cập nhật thuộc tính width và height cho SVG để đảm bảo nó phản hồi
-            svg.attr("width", container.getBoundingClientRect().width);
-            svg.attr("height", minHeight + margin.top + margin.bottom);
+        // 2. Contig Line (Chromosome)
+        g.append("line")
+          .attr("class", "contig-line")
+          .attr("x1", 0)
+          .attr("y1", centerLineY)
+          .attr("x2", width)
+          .attr("y2", centerLineY);
 
-            svg.selectAll("*").remove(); // Clear previous drawings
+        // 3. Axis (Ruler)
+        g.append("g")
+          .attr("transform", `translate(0, ${centerLineY + 15})`)
+          .call(d3.axisBottom(xScale).ticks(5).tickFormat(d3.format(".2s")));
 
-            const g = svg.append("g")
-                .attr("transform", `translate(${margin.left}, ${margin.top})`);
+        // 4. Feature Rectangles
+        const featureHeight = 20;
+        // Dòng (+) ở trên, Dòng (-) ở dưới
+        const yOffsetPositive = centerLineY - featureHeight - 10; // 10px trên
+        const yOffsetNegative = centerLineY + 10; // 10px dưới
 
-            // 1. Scale
-            const safeLength = (length && !isNaN(length) && length > 0) ? length : 1000;
+        const tooltip = d3.select("#tooltip");
 
-            const xScale = d3.scaleLinear()
-                .domain([1, safeLength])
-                .range([0, width]);
-
-            const validFeatures = features.filter(d => d.start_coord !== null);
-
-            const centerLineY = minHeight / 2; // Sử dụng chiều cao tối thiểu cho việc căn giữa
-
-            // 2. Contig Line (Chromosome)
-            g.append("line")
-                .attr("class", "contig-line")
-                .attr("x1", 0)
-                .attr("y1", centerLineY)
-                .attr("x2", width)
-                .attr("y2", centerLineY);
-
-            // 3. Axis (Ruler)
-            g.append("g")
-                .attr("transform", `translate(0, ${centerLineY + 15})`)
-                .call(d3.axisBottom(xScale).ticks(5).tickFormat(d3.format(".2s")));
-
-            // 4. Feature Rectangles
-            const featureHeight = 20;
-            // Dòng (+) ở trên, Dòng (-) ở dưới
-            const yOffsetPositive = centerLineY - featureHeight - 10; // 10px trên
-            const yOffsetNegative = centerLineY + 10; // 10px dưới
-
-            const tooltip = d3.select("#tooltip");
-
-            g.selectAll(".feature-rect")
-                .data(validFeatures) // Sử dụng dữ liệu đã lọc
-                .enter()
-                .append("rect")
-                .attr("class", "feature-rect")
-                .attr("x", d => xScale(d.start_coord)) 
-                .attr("y", d => d.strand === '-' ? yOffsetNegative : yOffsetPositive) // Differentiate by strand
-                .attr("width", d => {
-                    const startPos = xScale(d.start_coord); 
-                    const endPos = xScale(d.end_coord); 
-                    const calculatedWidth = endPos - startPos;
-                    // Trả về chiều rộng tối thiểu là 2 nếu chiều rộng tính toán quá nhỏ
-                    return Math.max(2, calculatedWidth);
-                })
-                .attr("height", featureHeight)
-                .attr("fill", d => getFeatureColor(d.type))
-                .on("mouseover", function (event, d) {
-                    d3.select(this).attr("stroke", "black").attr("stroke-width", 2);
-                    tooltip.html(`
+        g.selectAll(".feature-rect")
+          .data(validFeatures) // Sử dụng dữ liệu đã lọc
+          .enter()
+          .append("rect")
+          .attr("class", "feature-rect")
+          .attr("x", (d) => xScale(d.start_coord))
+          .attr("y", (d) =>
+            d.strand === "-" ? yOffsetNegative : yOffsetPositive
+          ) // Differentiate by strand
+          .attr("width", (d) => {
+            const startPos = xScale(d.start_coord);
+            const endPos = xScale(d.end_coord);
+            const calculatedWidth = endPos - startPos;
+            // Trả về chiều rộng tối thiểu là 2 nếu chiều rộng tính toán quá nhỏ
+            return Math.max(2, calculatedWidth);
+          })
+          .attr("height", featureHeight)
+          .attr("fill", (d) => getFeatureColor(d.type))
+          .on("mouseover", function (event, d) {
+            d3.select(this).attr("stroke", "black").attr("stroke-width", 2);
+            tooltip
+              .html(
+                `
                         <strong>Loại:</strong> ${d.type}<br>
-                        <strong>ID:</strong> ${d.qualifiers?.gene?.[0] || d.description || 'N/A'}<br>
-                        <strong>Vị trí:</strong> ${d.start_coord ? d.start_coord.toLocaleString() : 'N/A'} - ${d.end_coord ? d.end_coord.toLocaleString() : 'N/A'} (Locus: ${d.location})<br>
-                        <strong>Sợi:</strong> ${d.strand || 'Không xác định'}<br>
-                        <strong>Chú giải:</strong> ${d.description || 'Không có'}
-                    `)
-                        .style("left", (event.pageX + 10) + "px")
-                        .style("top", (event.pageY - 10) + "px")
-                        .style("display", "block");
-                })
-                .on("mousemove", function (event) {
-                    tooltip.style("left", (event.pageX + 10) + "px")
-                        .style("top", (event.pageY - 10) + "px");
-                })
-                .on("mouseout", function () {
-                    d3.select(this).attr("stroke", "none");
-                    tooltip.style("display", "none");
-                });
+                        <strong>ID:</strong> ${
+                          d.qualifiers?.gene?.[0] || d.description || "N/A"
+                        }<br>
+                        <strong>Vị trí:</strong> ${
+                          d.start_coord ? d.start_coord.toLocaleString() : "N/A"
+                        } - ${
+                  d.end_coord ? d.end_coord.toLocaleString() : "N/A"
+                } (Locus: ${d.location})<br>
+                        <strong>Sợi:</strong> ${
+                          d.strand || "Không xác định"
+                        }<br>
+                        <strong>Chú giải:</strong> ${
+                          d.description || "Không có"
+                        }
+                    `
+              )
+              .style("left", event.pageX + 10 + "px")
+              .style("top", event.pageY - 10 + "px")
+              .style("display", "block");
+          })
+          .on("mousemove", function (event) {
+            tooltip
+              .style("left", event.pageX + 10 + "px")
+              .style("top", event.pageY - 10 + "px");
+          })
+          .on("mouseout", function () {
+            d3.select(this).attr("stroke", "none");
+            tooltip.style("display", "none");
+          });
+      }
+
+      // Hàm load data chính
+      async function loadGeneData() {
+        if (!species || !contigId) {
+          document.getElementById("page-title").textContent =
+            "Lỗi: Thiếu thông số tìm kiếm";
+          document.getElementById("contig-id").textContent = "N/A";
+          return;
         }
 
-        // Hàm load data chính
-        async function loadGeneData() {
-            if (!species || !contigId) {
-                document.getElementById('page-title').textContent = 'Lỗi: Thiếu thông số tìm kiếm';
-                document.getElementById('contig-id').textContent = 'N/A';
-                return;
-            }
+        // Cập nhật Contig ID trong tiêu đề trước khi tải
+        document.getElementById("contig-id").textContent = contigId;
+        document.getElementById("gene-contig").textContent = contigId;
+        document.getElementById("gene-species").textContent = species;
 
-            // Cập nhật Contig ID trong tiêu đề trước khi tải
-            document.getElementById('contig-id').textContent = contigId;
-            document.getElementById('gene-contig').textContent = contigId;
-            document.getElementById('gene-species').textContent = species;
+        try {
+          const url = `${BASE_API_URL}?species=${encodeURIComponent(
+            species
+          )}&contig_id=${encodeURIComponent(contigId)}`;
 
+          const maxRetries = 3;
+          let response;
 
+          for (let i = 0; i < maxRetries; i++) {
             try {
-                const url = `${BASE_API_URL}?species=${encodeURIComponent(species)}&contig_id=${encodeURIComponent(contigId)}`;
-
-                const maxRetries = 3;
-                let response;
-
-                for (let i = 0; i < maxRetries; i++) {
-                    try {
-                        response = await fetch(url);
-                        if (response.ok || i === maxRetries - 1) {
-                            break;
-                        }
-                    } catch (fetchError) {
-                        if (i < maxRetries - 1) {
-                            const delay = Math.pow(2, i) * 1000;
-                            await new Promise(resolve => setTimeout(resolve, delay));
-                        } else {
-                            throw fetchError;
-                        }
-                    }
-                }
-
-                const data = await response.json();
-                console.log("Fetched Data:", data);
-
-                if (!response.ok) {
-                    throw new Error(data.error || 'Không tìm thấy dữ liệu contig.');
-                }
-
-                // Lưu dữ liệu đã tải VÀ GÁN species TỪ PARAMS VÀO DATA
-                loadedData = data;
-                loadedData.species = species; // Đảm bảo loadedData có trường species cho hàm tạo link
-
-                // Xử lý dữ liệu features để trích xuất start, end, strand cho Visualization và Bảng
-                if (loadedData.features) {
-                    loadedData.features = loadedData.features.map(feature => {
-                        const locationString = feature.location || `${feature.location_start}..${feature.location_end}`; 
-                        const { start, end, strand } = parseLocation(locationString);
-
-                        const feature_description = feature.product || feature.gene || feature.locus_tag || 'N/A';
-
-                        return {
-                            ...feature,
-                            location: locationString,
-                            start_coord: start, 
-                            end_coord: end,     
-                            strand: strand,     
-                            description: feature_description
-                        };
-                    });
-                    // Sau khi xử lý, ta lọc ra các feature có tọa độ hợp lệ cho Visualization
-                    loadedData.validFeatures = loadedData.features.filter(f => f.start_coord && f.end_coord);
-                } else {
-                    loadedData.validFeatures = [];
-                }
-
-                // Cập nhật thông tin tóm tắt
-                document.getElementById('page-title').textContent = `Chi tiết Contig: ${contigId}`;
-                document.getElementById('gene-description').textContent = data.description || 'Không có mô tả chi tiết.';
-                document.getElementById('gene-length').textContent = data.sequence_length ? data.sequence_length.toLocaleString() : 'N/A';
-                document.getElementById('gene-features-count').textContent = data.features ? data.features.length.toLocaleString() : '0';
-
-                // Cập nhật trình tự
-                document.getElementById('nucleotide-sequence').textContent = formatSequence(data.sequence || "Lỗi: Trình tự chưa được tải từ API.");
-
-                // Cập nhật bảng features 
-                const featuresBody = document.getElementById('features-body');
-                featuresBody.innerHTML = '';
-
-                if (loadedData.features && loadedData.features.length > 0) {
-                    loadedData.features.forEach(feature => {
-                        const row = featuresBody.insertRow();
-                        row.innerHTML = `
-                            <td class="px-2 py-2 whitespace-nowrap text-sm text-gray-900 font-mono w-[15%]">${feature.type || 'N/A'}</td>
-                            <td class="px-2 py-2 text-xs text-gray-500 w-[25%] font-mono break-words">${feature.location || '?'}</td>
-                            <td class="px-2 py-2 text-sm text-gray-700 w-[60%]">${feature.description}</td>
-                        `;
-                    });
-                } else {
-                    featuresBody.innerHTML = `<tr><td colspan="3" class="px-2 py-4 text-center text-sm text-gray-500">Không có đặc trưng nào được chú giải.</td></tr>`;
-                }
-
-                // Trực quan hóa
-                if (loadedData.validFeatures && loadedData.sequence_length) {
-                    visualizeFeatures(loadedData.validFeatures, loadedData.sequence_length);
-                } else {
-                    d3.select("#genome-visualization").selectAll("*").remove(); // Xóa nếu không có data
-                    d3.select("#genome-visualization").append("text")
-                        .attr("x", 150)
-                        .attr("y", 100)
-                        .attr("text-anchor", "middle")
-                        .text("Không có dữ liệu đặc trưng hoặc độ dài trình tự.")
-                        .attr("fill", "#6c757d");
-                }
-
-            } catch (error) {
-                document.getElementById('page-title').textContent = 'Lỗi Tải Dữ liệu';
-                document.getElementById('gene-description').textContent = `Không thể tải dữ liệu: ${error.message}`;
-                document.getElementById('contig-id').textContent = contigId || 'N/A';
-                document.getElementById('nucleotide-sequence').textContent = 'Lỗi khi tải trình tự.';
-                console.error("Fetch Error:", error);
+              response = await fetch(url);
+              if (response.ok || i === maxRetries - 1) {
+                break;
+              }
+            } catch (fetchError) {
+              if (i < maxRetries - 1) {
+                const delay = Math.pow(2, i) * 1000;
+                await new Promise((resolve) => setTimeout(resolve, delay));
+              } else {
+                throw fetchError;
+              }
             }
+          }
+
+          const data = await response.json();
+          console.log("Fetched Data:", data);
+
+          if (!response.ok) {
+            throw new Error(data.error || "Không tìm thấy dữ liệu contig.");
+          }
+
+          // Lưu dữ liệu đã tải VÀ GÁN species TỪ PARAMS VÀO DATA
+          loadedData = data;
+          loadedData.species = species; // Đảm bảo loadedData có trường species cho hàm tạo link
+
+          // Xử lý dữ liệu features để trích xuất start, end, strand cho Visualization và Bảng
+          if (loadedData.features) {
+            loadedData.features = loadedData.features.map((feature) => {
+              const locationString = feature.location;
+              const { start, end, strand } = parseLocation(locationString);
+
+              const feature_description =
+                feature.product_name ||
+                feature.gene_name ||
+                feature.locus_tag ||
+                "N/A";
+
+              return {
+                ...feature,
+                location: locationString,
+                start_coord: start,
+                end_coord: end,
+                strand: strand,
+                description: feature_description,
+              };
+            });
+            // Sau khi xử lý, ta lọc ra các feature có tọa độ hợp lệ cho Visualization
+            loadedData.validFeatures = loadedData.features.filter(
+              (f) => f.start_coord && f.end_coord
+            );
+          } else {
+            loadedData.validFeatures = [];
+          }
+
+          // Cập nhật thông tin tóm tắt
+          document.getElementById(
+            "page-title"
+          ).textContent = `Chi tiết Contig: ${contigId}`;
+          document.getElementById("gene-description").textContent =
+            data.description || "Không có mô tả chi tiết.";
+          document.getElementById("gene-length").textContent =
+            data.sequence_length
+              ? data.sequence_length.toLocaleString()
+              : "N/A";
+          document.getElementById("gene-features-count").textContent =
+            data.features ? data.features.length.toLocaleString() : "0";
+
+          // Cập nhật trình tự
+          // document.getElementById('nucleotide-sequence').textContent = formatSequence(data.sequence || "Lỗi: Trình tự chưa được tải từ API.");
+          loadSequenceData(data.contig_id);
+
+          // Cập nhật bảng features
+          const featuresBody = document.getElementById("features-body");
+          featuresBody.innerHTML = "";
+
+          if (loadedData.features && loadedData.features.length > 0) {
+            loadedData.features.forEach((feature) => {
+              const row = featuresBody.insertRow();
+              row.innerHTML = `
+                            <td class="px-2 py-2 whitespace-nowrap text-sm text-gray-900 font-mono w-[15%]">${
+                              feature.type || "N/A"
+                            }</td>
+                            <td class="px-2 py-2 text-xs text-gray-500 w-[25%] font-mono break-words">${feature.location_string || '?'}</td>
+                            <td class="px-2 py-2 text-sm text-gray-700 w-[60%]">${
+                              feature.description
+                            }</td>
+                        `;
+            });
+          } else {
+            featuresBody.innerHTML = `<tr><td colspan="3" class="px-2 py-4 text-center text-sm text-gray-500">Không có đặc trưng nào được chú giải.</td></tr>`;
+          }
+
+          // Trực quan hóa
+          if (loadedData.validFeatures && loadedData.sequence_length) {
+            visualizeFeatures(
+              loadedData.validFeatures,
+              loadedData.sequence_length
+            );
+          } else {
+            d3.select("#genome-visualization").selectAll("*").remove(); // Xóa nếu không có data
+            d3.select("#genome-visualization")
+              .append("text")
+              .attr("x", 150)
+              .attr("y", 100)
+              .attr("text-anchor", "middle")
+              .text("Không có dữ liệu đặc trưng hoặc độ dài trình tự.")
+              .attr("fill", "#6c757d");
+          }
+        } catch (error) {
+          document.getElementById("page-title").textContent = "Lỗi Tải Dữ liệu";
+          document.getElementById(
+            "gene-description"
+          ).textContent = `Không thể tải dữ liệu: ${error.message}`;
+          document.getElementById("contig-id").textContent = contigId || "N/A";
+          document.getElementById("nucleotide-sequence").textContent =
+            "Lỗi khi tải trình tự.";
+          console.error("Fetch Error:", error);
+        }
+      }
+
+      async function loadSequenceData(contigId) {
+        const seqDisplay = document.getElementById("nucleotide-sequence");
+        seqDisplay.textContent = "Đang tải trình tự (có thể mất vài giây)...";
+
+        try {
+          const response = await fetch(
+            `/api/get_sequence?contig_id=${encodeURIComponent(contigId)}`
+          );
+          const seqData = await response.json();
+
+          if (!response.ok) {
+            throw new Error(seqData.error || "Lỗi không xác định");
+          }
+
+          // Cập nhật biến global `loadedData` để nút Download FASTA hoạt động
+          if (loadedData) {
+            loadedData.sequence = seqData.sequence;
+          }
+
+          // Hiển thị trình tự đã format
+          seqDisplay.textContent = formatSequence(seqData.sequence);
+        } catch (error) {
+          seqDisplay.textContent = `Lỗi khi tải trình tự: ${error.message}`;
+          console.error("Lỗi tải sequence:", error);
+        }
+      }
+
+      window.onload = function () {
+        loadGeneData();
+
+        // Gắn sự kiện click cho nút JBrowse
+        const jbrowseButton = document.getElementById("jbrowse-button");
+        if (jbrowseButton) {
+          jbrowseButton.onclick = handleJBrowseClick;
         }
 
-        window.onload = function() {
-            loadGeneData();
-            
-            // Gắn sự kiện click cho nút JBrowse
-            const jbrowseButton = document.getElementById('jbrowse-button');
-            if (jbrowseButton) {
-                jbrowseButton.onclick = handleJBrowseClick;
-            }
+        // GẮN SỰ KIỆN CLICK CHO NÚT CRISPR
+        const crisprButton = document.getElementById("crispr-button");
+        if (crisprButton) {
+          crisprButton.onclick = handleCrisprClick;
+        }
+      };
 
-            // GẮN SỰ KIỆN CLICK CHO NÚT CRISPR
-            const crisprButton = document.getElementById('crispr-button');
-            if (crisprButton) {
-                crisprButton.onclick = handleCrisprClick;
-            }
-        };
-
-        window.onresize = () => {
-            // Redraw visualization on resize using the saved data
-        // === LOGIC XỬ LÝ KẾT QUẢ VÀ TRỰC QUAN HÓA ===
-        // === LOGIC XỬ LÝ KẾT QUẢ VÀ TRỰC QUAN HÓA ===
-        // === LOGIC XỬ LÝ KẾT QUẢ VÀ TRỰC QUAN HÓA ===
-        // === LOGIC XỬ LÝ KẾT QUẢ VÀ TRỰC QUAN HÓA ===
-        // === LOGIC XỬ LÝ KẾT QUẢ VÀ TRỰC QUAN HÓA ===
-        // === LOGIC XỬ LÝ KẾT QUẢ VÀ TRỰC QUAN HÓA ===
-        // === LOGIC XỬ LÝ KẾT QUẢ VÀ TRỰC QUAN HÓA ===
-            if (loadedData && loadedData.validFeatures && loadedData.sequence_length) {
-                visualizeFeatures(loadedData.validFeatures, loadedData.sequence_length);
-            }
-        };
+      window.onresize = () => {
+        if (
+          loadedData &&
+          loadedData.validFeatures &&
+          loadedData.sequence_length
+        ) {
+          visualizeFeatures(
+            loadedData.validFeatures,
+            loadedData.sequence_length
+          );
+        }
+      };
     </script>
-</body>
-
+  </body>
 </html>

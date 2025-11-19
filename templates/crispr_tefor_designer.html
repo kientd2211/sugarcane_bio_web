@@ -210,7 +210,6 @@
                     });
 
                     if (response.status === 403) {
-                        // Lỗi 403: Rất có thể là lỗi API Key trong Canvas
                         throw new Error("403 Forbidden: Lỗi xác thực API Key. Vui lòng kiểm tra môi trường Canvas.");
                     }
 
@@ -232,25 +231,10 @@
                 }
             }
             throw error;
-
-
-
-
-
         }
 
         // === LOGIC XỬ LÝ KẾT QUẢ VÀ TRỰC QUAN HÓA ===
-        // === LOGIC XỬ LÝ KẾT QUẢ VÀ TRỰC QUAN HÓA ===
-        // === LOGIC XỬ LÝ KẾT QUẢ VÀ TRỰC QUAN HÓA ===
-        // === LOGIC XỬ LÝ KẾT QUẢ VÀ TRỰC QUAN HÓA ===
-        // === LOGIC XỬ LÝ KẾT QUẢ VÀ TRỰC QUAN HÓA ===
-        // === LOGIC XỬ LÝ KẾT QUẢ VÀ TRỰC QUAN HÓA ===
-        // === LOGIC XỬ LÝ KẾT QUẢ VÀ TRỰC QUAN HÓA ===
-        // === LOGIC XỬ LÝ KẾT QUẢ VÀ TRỰC QUAN HÓA ===
-        // === LOGIC XỬ LÝ KẾT QUẢ VÀ TRỰC QUAN HÓA ===
-        // === LOGIC XỬ LÝ KẾT QUẢ VÀ TRỰC QUAN HÓA ===
-        // === LOGIC XỬ LÝ KẾT QUẢ VÀ TRỰC QUAN HÓA ===
-        // === LOGIC XỬ LÝ KẾT QUẢ VÀ TRỰC QUAN HÓA ===
+        // (Giữ nguyên các hàm fetchCrisprDesign, renderResults, highlightSequence)
 
         /**
          * Dùng AI để phân tích trình tự và đề xuất gRNA
@@ -258,7 +242,7 @@
         async function fetchCrisprDesign() {
             showLoading(true);
 
-            const sequence = currentSequence;
+            const sequence = currentSequence; // Dùng biến toàn cục đã được cập nhật
             const pam = document.getElementById('pam-sequence').value.toUpperCase();
             const grnaLength = document.getElementById('grna-length').value;
 
@@ -413,8 +397,43 @@
             vizDiv.innerHTML = formattedHtml;
         }
 
+        
+        // ====================================================================
+        // === HÀM MỚI: TỰ ĐỘNG TẢI TRÌNH TỰ TỪ CSDL ===
+        // ====================================================================
+        async function loadSequenceForCrispr(contigId) {
+            const sequenceInput = document.getElementById('dna-sequence');
+            const sequenceLengthDisplay = document.getElementById('sequence-length');
+            
+            sequenceInput.placeholder = 'Đang tải trình tự từ CSDL...';
+            sequenceInput.disabled = true;
 
-        // === KHỞI TẠO ===
+            try {
+                // Sử dụng API chúng ta đã tạo cho gene_view.html
+                const response = await fetch(`/api/get_sequence?contig_id=${encodeURIComponent(contigId)}`);
+                const seqData = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(seqData.error || 'Lỗi không xác định');
+                }
+                
+                // Tự động điền trình tự vào <textarea>
+                sequenceInput.value = seqData.sequence;
+                sequenceInput.disabled = false;
+                
+                // Cập nhật độ dài và biến toàn cục
+                updateSequenceLength(); 
+
+            } catch (error) {
+                sequenceInput.placeholder = `Lỗi khi tải trình tự. Vui lòng dán thủ công.`;
+                sequenceInput.disabled = false;
+                showError(`Không thể tự động tải trình tự cho ${contigId}. Vui lòng dán thủ công. Chi tiết: ${error.message}`);
+                console.error("Lỗi tải sequence for CRISPR:", error);
+            }
+        }
+
+
+        // === KHỞI TẠO (ĐÃ CẬP NHẬT) ===
         document.addEventListener('DOMContentLoaded', () => {
             // Hiển thị thông tin contig
             document.getElementById('target-species').textContent = species;
@@ -423,10 +442,18 @@
             // Lắng nghe thay đổi trình tự
             const sequenceInput = document.getElementById('dna-sequence');
             sequenceInput.addEventListener('input', updateSequenceLength);
-            updateSequenceLength(); // Khởi tạo ban đầu
-
+            
             // Lắng nghe nút thiết kế
             document.getElementById('design-button').addEventListener('click', fetchCrisprDesign);
+
+            // *** LOGIC MỚI: Tự động tải trình tự nếu có contig_id ***
+            if (contigId && contigId !== 'Manual Input') {
+                // Nếu có contigId từ URL, gọi API để tải trình tự
+                loadSequenceForCrispr(contigId);
+            } else {
+                // Nếu không có (người dùng tự vào), chỉ cập nhật độ dài (cho placeholder)
+                updateSequenceLength();
+            }
         });
     </script>
 </body>

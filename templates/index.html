@@ -64,28 +64,34 @@
             </h2>
 
             <form id="gene-search-form" class="space-y-4">
-              <!-- Species Selector -->
-              <div>
-                <label
-                  for="species"
-                  class="block text-sm font-medium text-gray-700 mb-1"
-                  >Chọn Loài</label
-                >
-                <select
-                  id="species"
-                  name="species"
-                  required
-                  class="w-full p-3 border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500"
-                >
-                  {% if species_list %} {% for species in species_list %}
-                  <option value="{{ species }}">{{ species }}</option>
-                  {% endfor %} {% else %}
-                  <option value="" disabled>Không có dữ liệu loài</option>
-                  {% endif %}
-                </select>
+              
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                <div>
+                  <label for="species_group" class="block text-sm font-medium text-gray-700 mb-1">
+                    1. Chọn Nhóm Loài
+                  </label>
+                  <select
+                    id="species_group"
+                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-white"
+                  >
+                    </select>
+                </div>
+
+                <div>
+                  <label for="species" class="block text-sm font-medium text-gray-700 mb-1">
+                    2. Chọn Bộ Gen
+                  </label>
+                  <select
+                    id="species"
+                    name="species" 
+                    required
+                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50"
+                  >
+                    </select>
+                </div>
               </div>
 
-              <!-- Contig/Gene ID Input -->
               <div>
                 <label
                   for="contig_id"
@@ -102,7 +108,6 @@
                 />
               </div>
 
-              <!-- Submit Button -->
               <button
                 type="submit"
                 class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-150 shadow-md"
@@ -252,53 +257,107 @@
             </div>
           </a>
 
-          <!-- About/Documentation Card (Placeholder) -->
-          <div class="card p-6 bg-gray-50 border-l-4 border-gray-400">
+          <a
+            href="/upload"
+            class="card block p-6 bg-gray-50 border-l-4 border-gray-500 hover:bg-gray-100 transition"
+          >
             <div class="flex items-center space-x-3">
-              <svg
-                class="w-8 h-8 text-gray-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                ></path>
+              <svg class="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
               </svg>
               <div>
-                <h3 class="text-xl font-bold text-gray-800">Về Dữ liệu</h3>
+                <h3 class="text-xl font-bold text-gray-800">
+                  Tải dữ liệu lên hệ thống
+                </h3>
                 <p class="text-sm text-gray-600">
-                  Thông tin chi tiết về nguồn dữ liệu và phương pháp chú giải.
+                  Thêm loài mới, bộ gen mới (FASTA/GBFF) vào cơ sở dữ liệu.
                 </p>
               </div>
             </div>
-          </div>
+          </a>    
         </div>
       </div>
     </div>
 
     <script>
-      // Không cần biến toàn cục searchResultData
-      // let searchResultData = null;
-        // === LOGIC XỬ LÝ KẾT QUẢ VÀ TRỰC QUAN HÓA ===
-        // === LOGIC XỬ LÝ KẾT QUẢ VÀ TRỰC QUAN HÓA ===
-        // === LOGIC XỬ LÝ KẾT QUẢ VÀ TRỰC QUAN HÓA ===
-        // === LOGIC XỬ LÝ KẾT QUẢ VÀ TRỰC QUAN HÓA ===
-        // === LOGIC XỬ LÝ KẾT QUẢ VÀ TRỰC QUAN HÓA ===
-        // === LOGIC XỬ LÝ KẾT QUẢ VÀ TRỰC QUAN HÓA ===
-        // === LOGIC XỬ LÝ KẾT QUẢ VÀ TRỰC QUAN HÓA ===
+      // ============================================================
+      // 1. LOGIC MỚI: XỬ LÝ DROPDOWN 2 CẤP (NHÓM -> LOÀI)
+      // ============================================================
 
+      // Nhận dữ liệu genome_groups từ Flask (Jinja2 tojson)
+      // Lưu ý: Biến genome_groups phải được truyền từ app.py
+      const genomeGroups = {{ genome_groups | tojson }};
+
+      const groupSelect = document.getElementById('species_group');
+      const speciesSelect = document.getElementById('species');
+
+      // Hàm khởi tạo dropdown Nhóm (Cấp 1)
+      function initGroupDropdown() {
+          // Xóa sạch các option cũ (nếu có)
+          groupSelect.innerHTML = '';
+
+          for (const groupName in genomeGroups) {
+              const option = document.createElement('option');
+              option.value = groupName;
+              // Thêm số lượng bộ gen vào tên nhóm, ví dụ: "Mía (3)"
+              const count = genomeGroups[groupName].length;
+              option.textContent = `${groupName} (${count})`; 
+              groupSelect.appendChild(option);
+          }
+          
+          // Sau khi tạo xong nhóm, gọi update lần đầu để điền bộ gen cho nhóm đầu tiên
+          updateSpeciesDropdown();
+      }
+
+      // Hàm cập nhật dropdown Bộ Gen (Cấp 2) dựa trên Nhóm đã chọn
+      function updateSpeciesDropdown() {
+          // Xóa các option cũ trong ô chọn loài
+          speciesSelect.innerHTML = '';
+          
+          const selectedGroup = groupSelect.value;
+          const genomes = genomeGroups[selectedGroup];
+
+          if (genomes) {
+              genomes.forEach(genome => {
+                  const option = document.createElement('option');
+                  option.value = genome.id;   // Giá trị gửi đi (vd: S_spontaneum)
+                  option.textContent = genome.name; // Tên hiển thị (vd: Saccharum spontaneum)
+                  speciesSelect.appendChild(option);
+              });
+              speciesSelect.disabled = false;
+          } else {
+              // Trường hợp lỗi hoặc không có dữ liệu
+              speciesSelect.disabled = true;
+              const option = document.createElement('option');
+              option.textContent = "Không có dữ liệu";
+              speciesSelect.appendChild(option);
+          }
+      }
+
+      // Lắng nghe sự kiện thay đổi nhóm để cập nhật list loài tương ứng
+      groupSelect.addEventListener('change', updateSpeciesDropdown);
+
+      // Khởi chạy logic dropdown khi trang tải xong
+      document.addEventListener('DOMContentLoaded', () => {
+          if (genomeGroups) {
+              initGroupDropdown();
+          }
+      });
+
+
+      // ============================================================
+      // 2. LOGIC CŨ: XỬ LÝ FORM TÌM KIẾM (GIỮ NGUYÊN CỦA BẠN)
+      // ============================================================
       document
         .getElementById("gene-search-form")
         .addEventListener("submit", async function (e) {
           e.preventDefault();
 
           const form = e.target;
-          const species = form.species.value;
+          
+          // Lấy giá trị từ ô select thứ 2 (name="species")
+          // Ô này chứa ID chính xác (vd: S_spontaneum) mà backend cần
+          const species = form.species.value; 
           let contigId = form.contig_id.value.trim();
 
           // Loại bỏ ký tự '>' ở đầu Contig ID
@@ -362,7 +421,6 @@
             const viewLink = document.getElementById("gene-view-link");
 
             // TẠO URL NGẮN GỌN VÀ CHỈ TRUYỀN CÁC THAM SỐ CẦN THIẾT
-            // Trang gene_view.html sẽ sử dụng hai tham số này để TỰ NÓ gọi API và tải dữ liệu.
             const params = new URLSearchParams({
               species: species,
               contig_id: data.contig_id,
