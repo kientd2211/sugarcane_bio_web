@@ -95,6 +95,65 @@ AVAILABLE_SPECIES = list(SPECIES_MAP.keys())
 
 BLASTN_PATH = r"C:\Program Files\NCBI\blast-2.17.0+\bin\blastn.exe"
 
+GENOME_METADATA = {
+    "S_spontaneum": {
+        "common_name": "Mía Hoang (Wild Sugarcane)",
+        "scientific_name": "Saccharum spontaneum",
+        "abbreviation": "Sspon",
+        "genus": "Saccharum",
+        "species": "spontaneum",
+        "description": "Saccharum spontaneum là một loại cỏ lâu năm thuộc họ Poaceae. Đây là loài hoang dại, tổ tiên của mía đường hiện đại. Nó có khả năng chống chịu stress sinh học và phi sinh học vượt trội, đóng vai trò quan trọng trong các chương trình lai tạo giống mía.",
+        "publications": [
+            "Zhang, J., et al. (2018). Allele-defined genome of the autopolyploid sugarcane Saccharum spontaneum L. Nature Genetics.",
+            "Aitken, K.S., et al. (2016). A Comprehensive Genetic Map of Saccharum spontaneum. BMC Genomics."
+        ],
+        "stats": {
+            "version": "v2.0",
+            "size": "2.9 Gb",
+            "contigs": "35,210",
+            "chromosomes": "32 (x=8, 4n)",
+            "genes": "83,120"
+        }
+    },
+    "durio_zibethinus": {
+        "common_name": "Sầu Riêng (Durian)",
+        "scientific_name": "Durio zibethinus",
+        "abbreviation": "Dzib",
+        "genus": "Durio",
+        "species": "zibethinus",
+        "description": "Sầu riêng được mệnh danh là 'Vua của các loại trái cây' ở Đông Nam Á. Bộ gen của giống Musang King đã được giải mã, tiết lộ sự mở rộng của các họ gen liên quan đến quá trình sinh tổng hợp lưu huỳnh dễ bay hơi, tạo nên mùi hương đặc trưng.",
+        "publications": [
+            "Teh, B.T., et al. (2017). The draft genome of tropical fruit durian (Durio zibethinus). Nature Genetics."
+        ],
+        "stats": {
+            "version": "MusangKing v1.0",
+            "size": "738 Mb",
+            "contigs": "45,000",
+            "chromosomes": "30",
+            "genes": "45,335"
+        }
+    },
+    "oryza_sativa_indica": {
+        "common_name": "Lúa Indica (Rice)",
+        "scientific_name": "Oryza sativa subsp. indica",
+        "abbreviation": "Os-Ind",
+        "genus": "Oryza",
+        "species": "sativa",
+        "description": "Nhóm lúa Indica là loại lúa được trồng phổ biến nhất ở các vùng nhiệt đới và cận nhiệt đới, bao gồm Việt Nam. Nó là nguồn lương thực chính cho hơn một nửa dân số thế giới.",
+        "publications": [
+            "Yu, J., et al. (2002). A draft sequence of the rice genome (Oryza sativa L. ssp. indica). Science."
+        ],
+        "stats": {
+            "version": "ASM465v1",
+            "size": "466 Mb",
+            "contigs": "12,000",
+            "chromosomes": "12",
+            "genes": "40,000"
+        }
+    },
+    # ... Bạn có thể thêm các loài khác tương tự ...
+}
+
 # -----------------------------------------------------------------
 # 2. QUẢN LÝ KẾT NỐI CSDL VỚI FLASK
 # -----------------------------------------------------------------
@@ -496,6 +555,58 @@ def jbrowse_view():
     
     return render_template('jbrowse_view.html', 
                            chrom=chrom, start=start, end=end, name=name)
+
+
+# --- HÀM HỖ TRỢ LẤY DỮ LIỆU CHO NAVBAR ---
+def get_recent_species_limit(limit=10):
+    """Lấy danh sách các loài (bộ gen) từ CSDL, giới hạn số lượng."""
+    db = get_db()
+    if db is None: return []
+    
+    species_list = []
+    try:
+        with db.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
+            # Lấy id, common_name, group_name. 
+            # Giả sử ID tự tăng hoặc sắp xếp theo tên để lấy 'mới nhất' (hoặc random)
+            cursor.execute("SELECT name, common_name, group_name FROM species LIMIT %s", (limit,))
+            rows = cursor.fetchall()
+            for row in rows:
+                species_list.append(dict(row)) # Chuyển thành dict để template dễ dùng
+    except Exception as e:
+        print(f"Lỗi lấy danh sách loài cho navbar: {e}")
+    return species_list
+
+# --- CONTEXT PROCESSOR: TỰ ĐỘNG GỬI DỮ LIỆU VÀO MỌI TRANG HTML ---
+@app.context_processor
+def inject_global_data():
+    """
+    Hàm này chạy trước khi render bất kỳ template nào.
+    Nó gửi biến 'navbar_genomes' vào tất cả các file HTML.
+    """
+    return dict(
+        navbar_genomes=get_recent_species_limit(10)
+    )
+    
+    
+@app.route('/genome/<species_id>')
+def genome_detail(species_id):
+    # Lấy thông tin cơ bản từ list nhóm
+    basic_info = SPECIES_MAP.get(species_id, species_id)
+    
+    # Lấy thông tin chi tiết từ Mock Data (nếu không có thì dùng default)
+    details = GENOME_METADATA.get(species_id, {
+        "common_name": basic_info,
+        "scientific_name": "Unknown",
+        "abbreviation": "N/A",
+        "genus": "N/A",
+        "species": "N/A",
+        "description": "Dữ liệu chi tiết cho bộ gen này đang được cập nhật.",
+        "publications": [],
+        "stats": {"version": "N/A", "size": "N/A", "genes": "N/A"}
+    })
+    
+    return render_template('genome_detail.html', data=details, species_id=species_id)
+
 
 # -----------------------------------------------------------------
 # 8. CHẠY ỨNG DỤNG

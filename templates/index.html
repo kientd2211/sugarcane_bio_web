@@ -3,380 +3,572 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Bio-Informatics Tools</title>
+    <title>Hệ Thống Dữ Liệu Gen Mía & Cây Trồng Việt Nam</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap"
       rel="stylesheet"
     />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
+
     <style>
       body {
-        font-family: "Inter", sans-serif;
-        background-color: #f8f9fa;
+        font-family: "Roboto", sans-serif;
       }
-
-      .hero-section {
-        background-color: #004d40;
-        color: white;
-        border-radius: 16px;
+      .nav-item {
+        @apply text-gray-700 hover:text-teal-700 px-3 py-2 rounded-md text-sm font-medium cursor-pointer transition-colors duration-200;
       }
-
-      .card {
-        background-color: white;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        transition: transform 0.2s;
+      .dropdown-content {
+        @apply hidden absolute bg-white shadow-lg mt-2 rounded-md w-64 z-50 border border-gray-100;
       }
-
-      .card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-      }
-
-      .result-box {
-        border: 1px solid #e0e0e0;
-        padding: 1rem;
-        border-radius: 8px;
+      .dropdown:hover .dropdown-content {
+        @apply block;
+      } /* Hiển thị khi hover */
+      .hero-pattern {
+        background-image: url("https://images.unsplash.com/photo-1598512752271-33f913a5af13?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80"); /* Ảnh lá cây/mía */
+        background-size: cover;
+        background-position: center;
       }
     </style>
   </head>
+  <body class="bg-gray-50 text-gray-800">
+    <nav class="bg-white shadow-md sticky top-0 z-50 font-sans">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+          <div
+            class="flex items-center cursor-pointer"
+            onclick="window.location.href='/'"
+          >
+            <span class="material-icons text-teal-600 text-4xl mr-2">spa</span>
+            <div>
+              <h1 class="font-bold text-xl tracking-tight text-gray-900">
+                BioHub Vietnam
+              </h1>
+              <p class="text-xs text-gray-500 uppercase tracking-wide">
+                Genomic Data Portal
+              </p>
+            </div>
+          </div>
 
-  <body class="p-4 md:p-10">
-    <div class="max-w-7xl mx-auto space-y-10">
-      <!-- Header and Hero Section -->
-      <div class="hero-section p-8 md:p-12 text-center">
-        <h1 class="text-5xl md:text-6xl font-extrabold mb-3">
-          Bio-Tools Gateway
+          <div class="hidden md:flex items-center space-x-1">
+            <a
+              href="/"
+              class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-teal-600 hover:bg-gray-50 rounded-md transition"
+            >
+              Home
+            </a>
+
+            <div class="relative group h-full flex items-center">
+              <button
+                class="px-4 py-2 text-sm font-medium text-gray-700 group-hover:text-teal-600 hover:bg-gray-50 rounded-md inline-flex items-center transition"
+              >
+                Genomes
+                <span class="material-icons text-sm ml-1">expand_more</span>
+              </button>
+              <div
+                class="absolute top-12 left-0 w-72 bg-white border border-gray-200 shadow-xl rounded-md hidden group-hover:block z-50"
+              >
+                <div class="py-2 max-h-96 overflow-y-auto">
+                  <div
+                    class="px-4 py-2 text-xs font-semibold text-gray-400 uppercase"
+                  >
+                    Mới cập nhật
+                  </div>
+                  {% for species in navbar_genomes %}
+                  <a
+                    href="/genome/{{ species.name }}"
+                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-teal-50 hover:text-teal-700 border-b border-gray-100 last:border-0"
+                  >
+                    {{ species.common_name }}
+                  </a>
+                  {% endfor %}
+                  <a
+                    href="#genomes-section"
+                    class="block px-4 py-2 text-sm font-bold text-teal-600 text-center bg-gray-50 hover:bg-gray-100"
+                  >
+                    Xem tất cả bộ gen
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <div class="relative group h-full flex items-center">
+              <button
+                class="px-4 py-2 text-sm font-medium text-gray-700 group-hover:text-teal-600 hover:bg-gray-50 rounded-md inline-flex items-center transition"
+              >
+                JBrowse
+                <span class="material-icons text-sm ml-1">expand_more</span>
+              </button>
+              <div
+                class="absolute top-12 left-0 w-72 bg-white border border-gray-200 shadow-xl rounded-md hidden group-hover:block z-50"
+              >
+                <div class="py-2 max-h-96 overflow-y-auto">
+                  <div
+                    class="px-4 py-2 text-xs font-semibold text-gray-400 uppercase"
+                  >
+                    Chọn gen để xem
+                  </div>
+                  {% for species in navbar_genomes %}
+                  <a
+                    href="/jbrowse_view?chrom={{ species.name }}"
+                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-teal-50 hover:text-teal-700 border-b border-gray-100 last:border-0"
+                  >
+                    {{ species.common_name }}
+                  </a>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+
+            <div class="relative group h-full flex items-center">
+              <button
+                class="px-4 py-2 text-sm font-medium text-gray-700 group-hover:text-teal-600 hover:bg-gray-50 rounded-md inline-flex items-center transition"
+              >
+                Search
+                <span class="material-icons text-sm ml-1">expand_more</span>
+              </button>
+              <div
+                class="absolute top-12 left-0 w-64 bg-white border border-gray-200 shadow-xl rounded-md hidden group-hover:block z-50"
+              >
+                <div class="py-2">
+                  <a
+                    href="/#gene-search-section"
+                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-teal-50 hover:text-teal-700"
+                  >
+                    <span class="material-icons text-xs mr-2 align-middle"
+                      >search</span
+                    >Tra cứu Gen (Metadata)
+                  </a>
+                  <a
+                    href="/blast"
+                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-teal-50 hover:text-teal-700"
+                  >
+                    <span class="material-icons text-xs mr-2 align-middle"
+                      >saved_search</span
+                    >BLAST Search
+                  </a>
+                  <div class="border-t border-gray-100 my-1"></div>
+                  <a
+                    href="/primer"
+                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-teal-50 hover:text-teal-700"
+                  >
+                    <span class="material-icons text-xs mr-2 align-middle"
+                      >linear_scale</span
+                    >Primer Designer
+                  </a>
+                  <a
+                    href="/crispr_designer"
+                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-teal-50 hover:text-teal-700"
+                  >
+                    <span class="material-icons text-xs mr-2 align-middle"
+                      >content_cut</span
+                    >CRISPR Designer
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <a
+              href="/upload"
+              class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-teal-600 hover:bg-gray-50 rounded-md transition flex items-center"
+            >
+              <span class="material-icons text-sm mr-1">cloud_upload</span>
+              Upload
+            </a>
+
+            <a
+              href="#"
+              onclick="alert('Trang Danh sách Nghiên cứu đang được xây dựng!')"
+              class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-teal-600 hover:bg-gray-50 rounded-md transition"
+            >
+              Studies
+            </a>
+
+            <a
+              href="#"
+              class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-teal-600 hover:bg-gray-50 rounded-md transition"
+            >
+              About
+            </a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <div
+      class="hero-pattern relative bg-gray-900 h-96 flex items-center justify-center"
+    >
+      <div class="absolute inset-0 bg-black opacity-50"></div>
+      <div class="relative z-10 text-center px-4">
+        <h1
+          class="text-4xl md:text-6xl font-extrabold text-white mb-4 tracking-tight"
+        >
+          Cổng Dữ Liệu Gen & Công Cụ Phân Tích
         </h1>
-        <p class="text-xl font-light text-gray-200">
-          Nền tảng tra cứu, chú giải gen và phân tích sinh học phân tử chuyên
-          sâu.
+        <p class="text-xl md:text-2xl text-gray-200 mb-8 max-w-3xl mx-auto">
+          Nền tảng tập trung cho dữ liệu genomic, công cụ phân tích và nghiên
+          cứu các giống cây trồng chủ lực tại Việt Nam.
         </p>
+        <a
+          href="#tools-section"
+          class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-8 rounded-full transition duration-300 shadow-lg transform hover:scale-105"
+        >
+          Khám phá Công cụ
+        </a>
+      </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div
+        id="gene-search-section"
+        class="bg-white rounded-xl shadow-lg p-8 mb-16 -mt-20 relative z-20 border-t-4 border-teal-600"
+      >
+        <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+          <span class="material-icons text-teal-600 mr-2">search</span> Tra Cứu
+          & Chú Giải Gen
+        </h2>
+
+        <form id="gene-search-form" class="space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2"
+                >1. Chọn Nhóm Loài</label
+              >
+              <select
+                id="species_group"
+                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white shadow-sm"
+              ></select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2"
+                >2. Chọn Bộ Gen</label
+              >
+              <select
+                id="species"
+                name="species"
+                required
+                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-gray-50 shadow-sm"
+              ></select>
+            </div>
+          </div>
+
+          <div class="relative">
+            <label class="block text-sm font-medium text-gray-700 mb-2"
+              >3. Nhập Contig ID / Locus Tag / Mô tả</label
+            >
+            <input
+              type="text"
+              id="contig_id"
+              name="contig_id"
+              required
+              placeholder="Ví dụ: JAKOGQ010001029.1 hoặc SuSy-1"
+              class="w-full p-4 pl-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 shadow-sm font-mono text-lg"
+            />
+            <span class="material-icons absolute left-4 top-11 text-gray-400"
+              >dna</span
+            >
+          </div>
+
+          <button
+            type="submit"
+            class="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-4 rounded-lg transition duration-200 shadow-md flex items-center justify-center text-lg"
+          >
+            <span id="search-text">Tìm Kiếm Ngay</span>
+            <svg
+              id="loading-spinner"
+              class="animate-spin ml-3 h-5 w-5 text-white hidden"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              ></circle>
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+          </button>
+
+          <div
+            id="search-status"
+            class="p-3 rounded-lg text-center hidden"
+          ></div>
+        </form>
+
+        <div
+          id="search-results"
+          class="hidden mt-8 p-6 bg-gray-50 rounded-lg border border-gray-200"
+        >
+          <h3 class="text-lg font-bold text-gray-900 mb-4">Kết Quả Tìm Kiếm</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <p class="text-sm text-gray-500">Mô tả</p>
+              <p id="result-description" class="font-semibold text-gray-800">
+                ...
+              </p>
+            </div>
+            <div>
+              <p class="text-sm text-gray-500">Contig ID</p>
+              <p id="result-contig" class="font-mono font-bold text-teal-700">
+                ...
+              </p>
+            </div>
+            <div>
+              <p class="text-sm text-gray-500">Độ dài</p>
+              <p><span id="result-length" class="font-bold"></span> bp</p>
+            </div>
+            <div>
+              <p class="text-sm text-gray-500">Số lượng Features</p>
+              <p id="result-features-count" class="font-bold">...</p>
+            </div>
+          </div>
+          <a
+            id="gene-view-link"
+            href="#"
+            class="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-md transition shadow"
+          >
+            Xem Chi Tiết (Gene View)
+            <span class="material-icons ml-2 text-sm">arrow_forward</span>
+          </a>
+        </div>
       </div>
 
-      <!-- Main Content Grid (Search and Tools) -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <!-- 1. Gene Search Tool (Left Column) -->
-        <div class="lg:col-span-2 space-y-8">
-          <div class="card p-6">
-            <h2 class="text-3xl font-bold text-gray-800 mb-6 border-b pb-3">
-              Tra cứu và Chú giải Gen
-            </h2>
+      <section id="tools-section" class="mb-16">
+        <div class="text-center mb-10">
+          <h2 class="text-3xl font-bold text-gray-900">
+            Công Cụ Phân Tích (Available Tools)
+          </h2>
+          <div class="h-1 w-24 bg-teal-500 mx-auto mt-4 rounded"></div>
+        </div>
 
-            <form id="gene-search-form" class="space-y-4">
-              
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                
-                <div>
-                  <label for="species_group" class="block text-sm font-medium text-gray-700 mb-1">
-                    1. Chọn Nhóm Loài
-                  </label>
-                  <select
-                    id="species_group"
-                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-white"
-                  >
-                    </select>
-                </div>
-
-                <div>
-                  <label for="species" class="block text-sm font-medium text-gray-700 mb-1">
-                    2. Chọn Bộ Gen
-                  </label>
-                  <select
-                    id="species"
-                    name="species" 
-                    required
-                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 bg-gray-50"
-                  >
-                    </select>
-                </div>
-              </div>
-
-              <div>
-                <label
-                  for="contig_id"
-                  class="block text-sm font-medium text-gray-700 mb-1"
-                  >Nhập Contig ID, Locus Tag, hoặc Mô tả Gen</label
-                >
-                <input
-                  type="text"
-                  id="contig_id"
-                  name="contig_id"
-                  required
-                  placeholder="Ví dụ: JAKOGQ010001029.1 hoặc SuSy-1"
-                  class="w-full p-3 border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500"
-                />
-              </div>
-
-              <button
-                type="submit"
-                class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-150 shadow-md"
-              >
-                <span id="search-text">Tìm kiếm</span>
-                <svg
-                  id="loading-spinner"
-                  class="animate-spin -ml-1 mr-3 h-5 w-5 text-white hidden inline-block"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    class="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    stroke-width="4"
-                  ></circle>
-                  <path
-                    class="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-              </button>
-
-              <div
-                id="search-status"
-                class="mt-4 p-3 rounded-lg text-center hidden"
-              ></div>
-            </form>
-
-            <!-- Search Results -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div
+            class="bg-white rounded-xl shadow-md p-6 hover:shadow-xl transition duration-300 transform hover:-translate-y-2 border border-gray-100"
+          >
             <div
-              id="search-results"
-              class="hidden mt-6 pt-4 border-t border-gray-200"
+              class="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mb-4 mx-auto"
             >
-              <h3 class="text-xl font-semibold mb-3 text-gray-700">
-                Kết quả Tìm kiếm
+              <span class="material-icons text-blue-600 text-3xl"
+                >saved_search</span
+              >
+            </div>
+            <h3 class="text-xl font-bold text-center mb-2">BLAST Search</h3>
+            <p class="text-gray-600 text-center text-sm mb-4">
+              Đối chiếu trình tự gene với cơ sở dữ liệu (Local BLASTN).
+            </p>
+            <a
+              href="/blast"
+              class="block text-center text-blue-600 font-semibold hover:underline"
+              >Sử dụng ngay →</a
+            >
+          </div>
+
+          <div
+            class="bg-white rounded-xl shadow-md p-6 hover:shadow-xl transition duration-300 transform hover:-translate-y-2 border border-gray-100"
+          >
+            <div
+              class="bg-purple-100 w-16 h-16 rounded-full flex items-center justify-center mb-4 mx-auto"
+            >
+              <span class="material-icons text-purple-600 text-3xl"
+                >linear_scale</span
+              >
+            </div>
+            <h3 class="text-xl font-bold text-center mb-2">Primer Designer</h3>
+            <p class="text-gray-600 text-center text-sm mb-4">
+              Thiết kế mồi PCR tự động với tính toán Tm và GC%.
+            </p>
+            <a
+              href="/primer"
+              class="block text-center text-purple-600 font-semibold hover:underline"
+              >Sử dụng ngay →</a
+            >
+          </div>
+
+          <div
+            class="bg-white rounded-xl shadow-md p-6 hover:shadow-xl transition duration-300 transform hover:-translate-y-2 border border-gray-100"
+          >
+            <div
+              class="bg-teal-100 w-16 h-16 rounded-full flex items-center justify-center mb-4 mx-auto"
+            >
+              <span class="material-icons text-teal-600 text-3xl"
+                >content_cut</span
+              >
+            </div>
+            <h3 class="text-xl font-bold text-center mb-2">CRISPR Designer</h3>
+            <p class="text-gray-600 text-center text-sm mb-4">
+              Thiết kế gRNA chỉnh sửa gen tích hợp AI (Gemini).
+            </p>
+            <a
+              href="/crispr_designer"
+              class="block text-center text-teal-600 font-semibold hover:underline"
+              >Sử dụng ngay →</a
+            >
+          </div>
+
+          <div
+            class="bg-white rounded-xl shadow-md p-6 hover:shadow-xl transition duration-300 transform hover:-translate-y-2 border border-gray-100"
+          >
+            <div
+              class="bg-orange-100 w-16 h-16 rounded-full flex items-center justify-center mb-4 mx-auto"
+            >
+              <span class="material-icons text-orange-600 text-3xl"
+                >cloud_upload</span
+              >
+            </div>
+            <h3 class="text-xl font-bold text-center mb-2">Upload Data</h3>
+            <p class="text-gray-600 text-center text-sm mb-4">
+              Tải lên dữ liệu FASTA/GBFF mới cho hệ thống.
+            </p>
+            <a
+              href="/upload"
+              class="block text-center text-orange-600 font-semibold hover:underline"
+              >Tải lên →</a
+            >
+          </div>
+        </div>
+      </section>
+
+      <section id="genomes-section">
+        <div class="text-center mb-10">
+          <h2 class="text-3xl font-bold text-gray-900">
+            Dữ Liệu Gen Mới Nhất (Latest Genomes)
+          </h2>
+          <div class="h-1 w-24 bg-teal-500 mx-auto mt-4 rounded"></div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {% for species in navbar_genomes[:8] %}
+          <div
+            class="bg-white rounded-lg overflow-hidden shadow-md border border-gray-200 hover:shadow-lg transition"
+          >
+            <div class="h-32 bg-gray-200 relative">
+              <img
+                src="https://source.unsplash.com/random/400x200/?plant,nature,leaf&sig={{ loop.index }}"
+                class="w-full h-full object-cover opacity-80"
+                alt="Genome Image"
+              />
+              <div
+                class="absolute top-2 right-2 bg-teal-600 text-white text-xs px-2 py-1 rounded"
+              >
+                {{ species.group_name }}
+              </div>
+            </div>
+            <div class="p-4">
+              <h3
+                class="font-bold text-lg text-gray-900 mb-1 truncate"
+                title="{{ species.common_name }}"
+              >
+                {{ species.common_name }}
               </h3>
-              <div class="result-box bg-white space-y-3">
-                <p
-                  class="text-lg font-bold text-gray-900"
-                  id="result-description"
-                ></p>
-                <p class="text-sm text-gray-600">
-                  Contig ID:
-                  <span
-                    id="result-contig"
-                    class="font-mono font-semibold text-gray-800"
-                  ></span>
-                </p>
-                <p class="text-sm text-gray-600">
-                  Độ dài Trình tự:
-                  <span
-                    id="result-length"
-                    class="font-semibold text-gray-800"
-                  ></span>
-                  bp
-                </p>
-                <p class="text-sm text-gray-600">
-                  Số lượng Đặc trưng:
-                  <span
-                    id="result-features-count"
-                    class="font-semibold text-gray-800"
-                  ></span>
-                </p>
+              <p class="text-xs text-gray-500 font-mono mb-3">
+                {{ species.name }}
+              </p>
+              <div class="flex space-x-2">
                 <a
-                  id="gene-view-link"
-                  href="#"
-                  class="inline-block mt-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded-md transition duration-150 shadow-md"
+                  href="/gene_view?species={{ species.name }}&contig_id=example"
+                  onclick="alert('Vui lòng tìm kiếm contig cụ thể cho loài này')"
+                  class="flex-1 text-center text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded"
                 >
-                  Xem Chi tiết (Gene View)
+                  Info
+                </a>
+                <a
+                  href="/jbrowse_view?chrom={{ species.name }}"
+                  class="flex-1 text-center text-xs bg-teal-50 hover:bg-teal-100 text-teal-700 py-2 rounded font-semibold"
+                >
+                  JBrowse
                 </a>
               </div>
             </div>
           </div>
+          {% endfor %}
         </div>
 
-        <!-- 2. Tool Cards (Right Column) -->
-        <div class="lg:col-span-1 space-y-6">
-          <h2 class="text-2xl font-bold text-gray-800 mb-4">
-            Các Công cụ Phân tích
-          </h2>
-
-          <!-- BLAST Card -->
-          <a
-            href="/blast"
-            class="card block p-6 bg-blue-50 border-l-4 border-blue-600"
+        <div class="text-center mt-10">
+          <button
+            class="px-8 py-3 border border-teal-600 text-teal-600 font-bold rounded hover:bg-teal-600 hover:text-white transition duration-300"
           >
-            <div class="flex items-center space-x-3">
-              <svg
-                class="w-8 h-8 text-blue-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                ></path>
-              </svg>
-              <div>
-                <h3 class="text-xl font-bold text-gray-800">
-                  BLASTN Alignment
-                </h3>
-                <p class="text-sm text-gray-600">
-                  Tìm kiếm trình tự tương đồng trong bộ gen mục tiêu.
-                </p>
-              </div>
-            </div>
-          </a>
-
-          <!-- Primer Design Card -->
-          <a
-            href="/primer"
-            class="card block p-6 bg-purple-50 border-l-4 border-purple-600"
-          >
-            <div class="flex items-center space-x-3">
-              <svg
-                class="w-8 h-8 text-purple-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 4.354l.01.01m-.01-.01v2.71m0 5.084V16m0 5.006v.01m-2.93-1.666l-2.07 2.07m2.07-2.07h-2.71m0 5.084h2.71m0 5.006l-2.07-2.07m-2.93-1.666l-2.07 2.07m2.07-2.07V16m0 5.006v.01m-2.93-1.666l-2.07 2.07m2.07-2.07h-2.71m0 5.084h2.71m0 5.006l-2.07-2.07"
-                ></path>
-              </svg>
-              <div>
-                <h3 class="text-xl font-bold text-gray-800">
-                  Thiết kế Primer PCR
-                </h3>
-                <p class="text-sm text-gray-600">
-                  Tính toán Tm, %GC và tự động thiết kế cặp primer.
-                </p>
-              </div>
-            </div>
-          </a>
-
-          <a
-            href="/upload"
-            class="card block p-6 bg-gray-50 border-l-4 border-gray-500 hover:bg-gray-100 transition"
-          >
-            <div class="flex items-center space-x-3">
-              <svg class="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
-              </svg>
-              <div>
-                <h3 class="text-xl font-bold text-gray-800">
-                  Tải dữ liệu lên hệ thống
-                </h3>
-                <p class="text-sm text-gray-600">
-                  Thêm loài mới, bộ gen mới (FASTA/GBFF) vào cơ sở dữ liệu.
-                </p>
-              </div>
-            </div>
-          </a>    
+            Xem tất cả bộ gen
+          </button>
         </div>
-      </div>
+      </section>
     </div>
 
+    <footer class="bg-gray-900 text-white py-12 mt-12">
+      <div class="max-w-7xl mx-auto px-4 text-center">
+        <h2 class="text-2xl font-bold mb-4">BioHub Vietnam</h2>
+        <p class="text-gray-400 mb-8">
+          Hệ thống hỗ trợ nghiên cứu sinh học phân tử và tin sinh học.
+        </p>
+        <div class="text-sm text-gray-500">
+          &copy; 2024 BioHub Vietnam Project. Developed by Kien.
+        </div>
+      </div>
+    </footer>
+
     <script>
-      // ============================================================
-      // 1. LOGIC MỚI: XỬ LÝ DROPDOWN 2 CẤP (NHÓM -> LOÀI)
-      // ============================================================
+      // --- 1. DROPDOWN LOGIC CHO NAVBAR (MOBILE & DESKTOP) ---
+      // (Tailwind hover class handles desktop, this is strictly not needed unless for mobile toggle but keeping simple)
 
-      // Nhận dữ liệu genome_groups từ Flask (Jinja2 tojson)
-      // Lưu ý: Biến genome_groups phải được truyền từ app.py
+      // --- 2. LOGIC TÌM KIẾM (GIỮ NGUYÊN NHƯ CŨ, CHỈ TÍCH HỢP VÀO GIAO DIỆN MỚI) ---
+
+      // Nhận dữ liệu genome_groups từ Flask (biến này phải được truyền ở home route)
       const genomeGroups = {{ genome_groups | tojson }};
-
       const groupSelect = document.getElementById('species_group');
       const speciesSelect = document.getElementById('species');
 
-      // Hàm khởi tạo dropdown Nhóm (Cấp 1)
+      // Khởi tạo Dropdown
       function initGroupDropdown() {
-          // Xóa sạch các option cũ (nếu có)
           groupSelect.innerHTML = '';
-
           for (const groupName in genomeGroups) {
               const option = document.createElement('option');
               option.value = groupName;
-              // Thêm số lượng bộ gen vào tên nhóm, ví dụ: "Mía (3)"
               const count = genomeGroups[groupName].length;
-              option.textContent = `${groupName} (${count})`; 
+              option.textContent = `${groupName} (${count})`;
               groupSelect.appendChild(option);
           }
-          
-          // Sau khi tạo xong nhóm, gọi update lần đầu để điền bộ gen cho nhóm đầu tiên
           updateSpeciesDropdown();
       }
 
-      // Hàm cập nhật dropdown Bộ Gen (Cấp 2) dựa trên Nhóm đã chọn
       function updateSpeciesDropdown() {
-          // Xóa các option cũ trong ô chọn loài
           speciesSelect.innerHTML = '';
-          
           const selectedGroup = groupSelect.value;
           const genomes = genomeGroups[selectedGroup];
-
           if (genomes) {
               genomes.forEach(genome => {
                   const option = document.createElement('option');
-                  option.value = genome.id;   // Giá trị gửi đi (vd: S_spontaneum)
-                  option.textContent = genome.name; // Tên hiển thị (vd: Saccharum spontaneum)
+                  option.value = genome.id;
+                  option.textContent = genome.name;
                   speciesSelect.appendChild(option);
               });
               speciesSelect.disabled = false;
           } else {
-              // Trường hợp lỗi hoặc không có dữ liệu
               speciesSelect.disabled = true;
-              const option = document.createElement('option');
-              option.textContent = "Không có dữ liệu";
-              speciesSelect.appendChild(option);
           }
       }
 
-      // Lắng nghe sự kiện thay đổi nhóm để cập nhật list loài tương ứng
-      groupSelect.addEventListener('change', updateSpeciesDropdown);
+      if (groupSelect) {
+          groupSelect.addEventListener('change', updateSpeciesDropdown);
+          document.addEventListener('DOMContentLoaded', initGroupDropdown);
+      }
 
-      // Khởi chạy logic dropdown khi trang tải xong
-      document.addEventListener('DOMContentLoaded', () => {
-          if (genomeGroups) {
-              initGroupDropdown();
-          }
-      });
-
-
-      // ============================================================
-      // 2. LOGIC CŨ: XỬ LÝ FORM TÌM KIẾM (GIỮ NGUYÊN CỦA BẠN)
-      // ============================================================
-      document
-        .getElementById("gene-search-form")
-        .addEventListener("submit", async function (e) {
+      // --- XỬ LÝ SUBMIT FORM TÌM KIẾM (LOGIC CŨ) ---
+      document.getElementById("gene-search-form").addEventListener("submit", async function (e) {
           e.preventDefault();
-
           const form = e.target;
-          
-          // Lấy giá trị từ ô select thứ 2 (name="species")
-          // Ô này chứa ID chính xác (vd: S_spontaneum) mà backend cần
-          const species = form.species.value; 
+          const species = form.species.value;
           let contigId = form.contig_id.value.trim();
-
-          // Loại bỏ ký tự '>' ở đầu Contig ID
-          if (contigId.startsWith(">")) {
-            contigId = contigId.substring(1).trim();
-          }
-
-          if (!contigId) {
-            console.error("Vui lòng nhập Contig ID hoặc Gene ID hợp lệ.");
-            document.getElementById("search-status").innerHTML =
-              '<span class="text-red-700 font-semibold">Vui lòng nhập Contig ID hợp lệ.</span>';
-            document
-              .getElementById("search-status")
-              .classList.remove("hidden", "bg-green-100");
-            document
-              .getElementById("search-status")
-              .classList.add("bg-red-100");
-            return;
-          }
+          if (contigId.startsWith(">")) contigId = contigId.substring(1).trim();
 
           const statusDiv = document.getElementById("search-status");
           const resultsDiv = document.getElementById("search-results");
@@ -384,71 +576,43 @@
           const loadingSpinner = document.getElementById("loading-spinner");
           const searchText = document.getElementById("search-text");
 
-          // --- UI State: Loading ---
+          // Loading UI
           statusDiv.classList.add("hidden");
           resultsDiv.classList.add("hidden");
-          searchText.textContent = "Đang tìm...";
+          searchText.textContent = "Đang xử lý...";
           loadingSpinner.classList.remove("hidden");
           submitButton.disabled = true;
 
           try {
-            // Sử dụng API để tra cứu thông tin Contig
-            const url = `/api/gene_search?species=${encodeURIComponent(
-              species
-            )}&contig_id=${encodeURIComponent(contigId)}`;
-            const response = await fetch(url);
-            const data = await response.json();
+              const url = `/api/gene_search?species=${encodeURIComponent(species)}&contig_id=${encodeURIComponent(contigId)}`;
+              const response = await fetch(url);
+              const data = await response.json();
 
-            if (!response.ok) {
-              throw new Error(
-                data.error || "Lỗi không xác định khi tra cứu gen."
-              );
-            }
+              if (!response.ok) throw new Error(data.error || "Lỗi tìm kiếm.");
 
-            // --- KẾT QUẢ THÀNH CÔNG ---
+              // Success UI
+              document.getElementById("result-description").textContent = data.description;
+              document.getElementById("result-contig").textContent = data.contig_id;
+              document.getElementById("result-length").textContent = data.sequence_length.toLocaleString();
+              document.getElementById("result-features-count").textContent = data.features ? data.features.length.toLocaleString() : "0";
 
-            // Cập nhật kết quả UI
-            document.getElementById("result-description").textContent =
-              data.description;
-            document.getElementById("result-contig").textContent =
-              data.contig_id;
-            document.getElementById("result-length").textContent =
-              data.sequence_length.toLocaleString();
-            document.getElementById("result-features-count").textContent =
-              data.features ? data.features.length.toLocaleString() : "0";
+              const params = new URLSearchParams({ species: species, contig_id: data.contig_id }).toString();
+              document.getElementById("gene-view-link").href = `/gene_view?${params}`;
 
-            // Cập nhật link xem chi tiết
-            const viewLink = document.getElementById("gene-view-link");
+              resultsDiv.classList.remove("hidden");
+              // Scroll to results
+              resultsDiv.scrollIntoView({ behavior: 'smooth' });
 
-            // TẠO URL NGẮN GỌN VÀ CHỈ TRUYỀN CÁC THAM SỐ CẦN THIẾT
-            const params = new URLSearchParams({
-              species: species,
-              contig_id: data.contig_id,
-            }).toString();
-
-            // Đảm bảo trỏ đến đúng endpoint và truyền tham số
-            viewLink.href = `/gene_view?${params}`;
-
-            // Hiển thị và thông báo
-            resultsDiv.classList.remove("hidden");
-            statusDiv.innerHTML =
-              '<span class="text-green-700 font-semibold">Tìm thấy gen.</span>';
-            statusDiv.classList.remove("bg-red-100");
-            statusDiv.classList.add("bg-green-100");
           } catch (error) {
-            // --- Handle Error ---
-            resultsDiv.classList.add("hidden");
-            statusDiv.innerHTML = `<span class="text-red-700 font-semibold">Lỗi: ${error.message}</span>`;
-            statusDiv.classList.remove("bg-green-100");
-            statusDiv.classList.add("bg-red-100");
+              statusDiv.classList.remove("hidden");
+              statusDiv.innerHTML = `<span class="text-red-600 font-bold">⚠️ Lỗi: ${error.message}</span>`;
+              statusDiv.className = "mt-4 p-4 bg-red-50 rounded-lg text-center border border-red-200";
           } finally {
-            // --- UI State: Finished ---
-            statusDiv.classList.remove("hidden");
-            searchText.textContent = "Tìm kiếm";
-            loadingSpinner.classList.add("hidden");
-            submitButton.disabled = false;
+              searchText.textContent = "Tìm Kiếm Ngay";
+              loadingSpinner.classList.add("hidden");
+              submitButton.disabled = false;
           }
-        });
+      });
     </script>
   </body>
 </html>

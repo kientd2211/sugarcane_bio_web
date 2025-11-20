@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ data.common_name }} - Genome Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        body { font-family: 'Roboto', sans-serif; }
+        .sidebar-link { @apply flex justify-between items-center p-4 border-b border-gray-200 hover:bg-gray-50 transition cursor-pointer text-gray-700 font-medium; }
+        .sidebar-link.active { @apply border-l-4 border-teal-600 bg-teal-50 text-teal-800; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans">
+
+    <nav class="bg-white shadow sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+            <a href="/" class="flex items-center text-teal-700 font-bold text-xl">
+                <span class="material-icons mr-2">arrow_back</span> Genome Hub
+            </a>
+            <div class="text-sm text-gray-500">Chi tiết Bộ Gen</div>
+        </div>
+    </nav>
+
+    <div class="bg-teal-700 py-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-white tracking-wide">
+                {{ data.scientific_name }}
+            </h1>
+            <p class="text-teal-100 mt-2 text-lg">{{ data.common_name }}</p>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+            
+            <aside class="md:col-span-1">
+                <div class="bg-white rounded-lg shadow border border-gray-200 sticky top-24">
+                    <nav class="flex flex-col">
+                        <a href="#summary" class="sidebar-link active">
+                            <span>Summary</span>
+                            <span class="material-icons text-sm">chevron_right</span>
+                        </a>
+                        <a href="#publication" class="sidebar-link">
+                            <span>Publication</span>
+                        </a>
+                        <a href="#analyses" class="sidebar-link">
+                            <span>Analyses</span>
+                        </a>
+                        <a href="#statistics" class="sidebar-link">
+                            <span>Statistics</span>
+                        </a>
+                        <a href="#related" class="sidebar-link">
+                            <span>Related Data</span>
+                        </a>
+                    </nav>
+                </div>
+                
+                <div class="mt-6 space-y-3">
+                    <a href="/jbrowse_view?chrom={{ species_id }}" class="block w-full bg-blue-600 hover:bg-blue-700 text-white text-center font-bold py-3 rounded shadow transition">
+                        View in JBrowse
+                    </a>
+                    <a href="/blast" class="block w-full bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 text-center font-bold py-3 rounded shadow-sm transition">
+                        BLAST this Genome
+                    </a>
+                </div>
+            </aside>
+
+            <section class="md:col-span-3 space-y-8">
+                
+                <div id="summary" class="bg-white rounded-lg shadow p-8 border border-gray-200">
+                    <h2 class="text-xl font-bold text-gray-800 mb-6 pb-2 border-b border-gray-200 uppercase">Summary</h2>
+                    
+                    <div class="space-y-6 text-sm text-gray-700">
+                        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                            <div class="font-bold text-gray-900">Abbreviation</div>
+                            <div class="sm:col-span-3">{{ data.abbreviation }}</div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                            <div class="font-bold text-gray-900">Genus</div>
+                            <div class="sm:col-span-3 italic">{{ data.genus }}</div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                            <div class="font-bold text-gray-900">Species</div>
+                            <div class="sm:col-span-3 italic">{{ data.species }}</div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                            <div class="font-bold text-gray-900">Common Name</div>
+                            <div class="sm:col-span-3">{{ data.common_name }}</div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                            <div class="font-bold text-gray-900 pt-1">Description</div>
+                            <div class="sm:col-span-3 leading-relaxed text-justify">
+                                {{ data.description }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="publication" class="bg-white rounded-lg shadow p-8 border border-gray-200">
+                    <h2 class="text-xl font-bold text-gray-800 mb-6 pb-2 border-b border-gray-200 uppercase">Publication</h2>
+                    {% if data.publications %}
+                        <ul class="list-disc pl-5 space-y-3 text-sm text-gray-700">
+                            {% for pub in data.publications %}
+                            <li>{{ pub }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-gray-500 italic">Chưa có thông tin công bố.</p>
+                    {% endif %}
+                </div>
+
+                <div id="statistics" class="bg-white rounded-lg shadow p-8 border border-gray-200">
+                    <h2 class="text-xl font-bold text-gray-800 mb-6 pb-2 border-b border-gray-200 uppercase">Statistics</h2>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 text-sm">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left font-bold text-gray-700">Metric</th>
+                                    <th class="px-6 py-3 text-left font-bold text-gray-700">Value</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <tr>
+                                    <td class="px-6 py-4 font-medium text-gray-900">Assembly Version</td>
+                                    <td class="px-6 py-4 text-gray-600">{{ data.stats.version }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-6 py-4 font-medium text-gray-900">Estimated Genome Size</td>
+                                    <td class="px-6 py-4 text-gray-600">{{ data.stats.size }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-6 py-4 font-medium text-gray-900">Number of Chromosomes</td>
+                                    <td class="px-6 py-4 text-gray-600">{{ data.stats.chromosomes }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-6 py-4 font-medium text-gray-900">Number of Contigs</td>
+                                    <td class="px-6 py-4 text-gray-600">{{ data.stats.contigs }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-6 py-4 font-medium text-gray-900">Gene Number</td>
+                                    <td class="px-6 py-4 text-gray-600">{{ data.stats.genes }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </section>
+        </div>
+    </div>
+
+    <footer class="bg-gray-900 text-white py-8 mt-12 text-center text-sm">
+        &copy; 2024 BioHub Vietnam Project.
+    </footer>
+
+</body>
+</html>

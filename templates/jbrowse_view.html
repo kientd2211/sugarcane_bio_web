@@ -6,7 +6,10 @@
     <title>Trực quan hóa Gen JBrowse</title>
     <!-- Tải Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap"
+      rel="stylesheet"
+    />
 
     <style>
       :root {
@@ -18,12 +21,12 @@
         margin: 0;
         padding: 0;
       }
-      
+
       /* Đảm bảo iframe chiếm toàn bộ không gian của container */
       #jbrowse-container {
         width: 100%;
         /* Tăng chiều cao để chiếm gần hết không gian hiển thị */
-        height: 90vh; 
+        height: 90vh;
         min-height: 700px;
       }
     </style>
@@ -32,7 +35,9 @@
   <body class="bg-gray-50 min-h-screen">
     <!-- Header đã được tối ưu hóa để hiển thị thông tin chính -->
     <header class="bg-teal-700 text-white p-4 shadow-xl sticky top-0 z-20">
-      <div class="flex flex-col md:flex-row md:items-center justify-between max-w-7xl mx-auto">
+      <div
+        class="flex flex-col md:flex-row md:items-center justify-between max-w-7xl mx-auto"
+      >
         <h1 class="text-2xl font-extrabold">Trực quan hóa gen với JBrowse</h1>
         <p id="header-location" class="text-sm opacity-90 mt-1 md:mt-0"></p>
       </div>
@@ -132,12 +137,12 @@
           const location = `${chrom_display}:${start}..${end}`;
 
           // 1. Mã hóa cấu hình JBrowse tĩnh thành chuỗi URL-safe
-        // === LOGIC XỬ LÝ KẾT QUẢ VÀ TRỰC QUAN HÓA ===
-        // === LOGIC XỬ LÝ KẾT QUẢ VÀ TRỰC QUAN HÓA ===
-        // === LOGIC XỬ LÝ KẾT QUẢ VÀ TRỰC QUAN HÓA ===
-        // === LOGIC XỬ LÝ KẾT QUẢ VÀ TRỰC QUAN HÓA ===
-        // === LOGIC XỬ LÝ KẾT QUẢ VÀ TRỰC QUAN HÓA ===
-        // === LOGIC XỬ LÝ KẾT QUẢ VÀ TRỰC QUAN HÓA ===
+          // === LOGIC XỬ LÝ KẾT QUẢ VÀ TRỰC QUAN HÓA ===
+          // === LOGIC XỬ LÝ KẾT QUẢ VÀ TRỰC QUAN HÓA ===
+          // === LOGIC XỬ LÝ KẾT QUẢ VÀ TRỰC QUAN HÓA ===
+          // === LOGIC XỬ LÝ KẾT QUẢ VÀ TRỰC QUAN HÓA ===
+          // === LOGIC XỬ LÝ KẾT QUẢ VÀ TRỰC QUAN HÓA ===
+          // === LOGIC XỬ LÝ KẾT QUẢ VÀ TRỰC QUAN HÓA ===
           const encodedConfig = encodeURIComponent(
             JSON.stringify(staticConfig)
           );
@@ -149,7 +154,9 @@
           const jbrowseLink = `${JBROWSE_BASE_URL}#${hashParams}`;
 
           // Cập nhật thông tin vị trí lên header
-          headerLocation.innerHTML = `Đang xem: **${name}** | Vị trí: **${chrom_display}:${parseInt(start).toLocaleString()}-${parseInt(end).toLocaleString()}**`;
+          headerLocation.innerHTML = `Đang xem: **${name}** | Vị trí: **${chrom_display}:${parseInt(
+            start
+          ).toLocaleString()}-${parseInt(end).toLocaleString()}**`;
 
           // Tạo đường dẫn Quay lại chi tiết gen, truyền lại species và contig_id (chrom_query)
           const geneDetailReturnLink = `/gene_view?species=S_bicolor&contig_id=${chrom_query}`;
